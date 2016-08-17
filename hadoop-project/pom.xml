@@ -90,6 +90,10 @@
     <guice.version>4.0</guice.version>
     <joda-time.version>2.9.4</joda-time.version>
 
+    <jcache.version>1.0.0</jcache.version>
+    <ehcache.version>3.0.3</ehcache.version>
+
+
     <!-- define the Java language version used by the compiler -->
     <javac.version>1.8</javac.version>
 
@@ -1162,6 +1166,16 @@
           <groupId>org.apache.kerby</groupId>
           <artifactId>kerb-simplekdc</artifactId>
           <version>1.0.0-RC2</version>
+        </dependency>
+        <dependency>
+          <groupId>javax.cache</groupId>
+          <artifactId>cache-api</artifactId>
+          <version>${jcache.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.ehcache</groupId>
+          <artifactId>ehcache</artifactId>
+          <version>${ehcache.version}</version>
         </dependency>
     </dependencies>
   </dependencyManagement>
