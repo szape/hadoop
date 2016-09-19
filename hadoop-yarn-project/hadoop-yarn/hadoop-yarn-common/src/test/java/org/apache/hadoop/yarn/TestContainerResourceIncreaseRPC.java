@@ -26,6 +26,8 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
+import org.apache.hadoop.yarn.api.protocolrecords.GetContainerLaunchContextRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.GetContainerLaunchContextResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusesRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusesResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.IncreaseContainersResourceRequest;
@@ -186,6 +188,13 @@ public class TestContainerResourceIncreaseRPC {
     @Override public ResourceLocalizationResponse localize(
         ResourceLocalizationRequest request) throws YarnException, IOException {
       return null;
+    }
+  
+    @Override
+    public GetContainerLaunchContextResponse getContainerLaunchContext(
+        GetContainerLaunchContextRequest request) throws YarnException, IOException {
+      throw new UnsupportedOperationException("getting the container launch context is not " +
+          "supported for this implementation of ContainerManagementProtocol");
     }
   }
 }

@@ -46,6 +46,8 @@ import org.apache.hadoop.mapreduce.v2.app.job.event.TaskAttemptEventType;
 import org.apache.hadoop.mapreduce.v2.app.launcher.ContainerLauncher.EventType;
 import org.apache.hadoop.mapreduce.v2.util.MRBuilderUtils;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
+import org.apache.hadoop.yarn.api.protocolrecords.GetContainerLaunchContextRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.GetContainerLaunchContextResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.IncreaseContainersResourceRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.IncreaseContainersResourceResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusesRequest;
@@ -480,6 +482,13 @@ public class TestContainerLauncherImpl {
     public ResourceLocalizationResponse localize(
         ResourceLocalizationRequest request) throws YarnException, IOException {
       return null;
+    }
+  
+    @Override
+    public GetContainerLaunchContextResponse getContainerLaunchContext(
+        GetContainerLaunchContextRequest request) throws YarnException, IOException {
+      throw new UnsupportedOperationException("getting the container launch context is not " +
+          "supported for this implementation of ContainerManagementProtocol");
     }
   }
   
