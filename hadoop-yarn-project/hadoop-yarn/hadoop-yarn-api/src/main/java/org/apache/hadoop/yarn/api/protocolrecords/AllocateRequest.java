@@ -27,6 +27,7 @@ import org.apache.hadoop.yarn.api.ApplicationMasterProtocol;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerMoveRequest;
+import org.apache.hadoop.yarn.api.records.PerformanceMetric;
 import org.apache.hadoop.yarn.api.records.ResourceBlacklistRequest;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
 import org.apache.hadoop.yarn.api.records.UpdateContainerRequest;
@@ -85,7 +86,7 @@ public abstract class AllocateRequest {
       List<UpdateContainerRequest> updateRequests) {
     return newInstance(responseID, appProgress, resourceAsk,
         containersToBeReleased, resourceBlacklistRequest, updateRequests,
-        null);
+        null, null);
   }
   
   @Public
@@ -95,7 +96,8 @@ public abstract class AllocateRequest {
       List<ContainerId> containersToBeReleased,
       ResourceBlacklistRequest resourceBlacklistRequest,
       List<UpdateContainerRequest> updateRequests,
-      List<ContainerMoveRequest> moveAsk) {
+      List<ContainerMoveRequest> moveAsk,
+  List<PerformanceMetric> performanceVector) {
     AllocateRequest allocateRequest = Records.newRecord(AllocateRequest.class);
     allocateRequest.setResponseId(responseID);
     allocateRequest.setProgress(appProgress);
@@ -104,6 +106,7 @@ public abstract class AllocateRequest {
     allocateRequest.setResourceBlacklistRequest(resourceBlacklistRequest);
     allocateRequest.setUpdateRequests(updateRequests);
     allocateRequest.setMoveAskList(moveAsk);
+    allocateRequest.setPerformanceVector(performanceVector);
     return allocateRequest;
   }
   
@@ -254,4 +257,19 @@ public abstract class AllocateRequest {
   @Public
   @Unstable
   public abstract void setMoveAskList(List<ContainerMoveRequest> containerMoveRequests);
+  
+  /**
+   *
+   */
+  @Public
+  @Unstable
+  public abstract List<PerformanceMetric> getPerformanceVector();
+  
+  /**
+   *
+   */
+  @Public
+  @Unstable
+  public abstract void setPerformanceVector(
+      List<PerformanceMetric> performanceVector);
 }

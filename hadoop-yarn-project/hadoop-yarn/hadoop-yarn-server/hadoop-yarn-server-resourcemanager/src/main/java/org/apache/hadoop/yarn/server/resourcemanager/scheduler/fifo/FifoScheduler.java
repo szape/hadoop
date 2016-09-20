@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,7 @@ import org.apache.hadoop.yarn.api.records.ContainerMoveRequest;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.NodeState;
+import org.apache.hadoop.yarn.api.records.PerformanceMetric;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.QueueACL;
 import org.apache.hadoop.yarn.api.records.QueueInfo;
@@ -126,6 +128,8 @@ public class FifoScheduler extends
   private QueueMetrics metrics;
   
   private final ResourceCalculator resourceCalculator = new DefaultResourceCalculator();
+  
+  public List<PerformanceMetric> performanceMetrics = new ArrayList<PerformanceMetric>();
 
   private final Queue DEFAULT_QUEUE = new Queue() {
     @Override
@@ -394,12 +398,24 @@ public class FifoScheduler extends
       List<String> blacklistAdditions, List<String> blacklistRemovals,
       List<UpdateContainerRequest> increaseRequests,
       List<UpdateContainerRequest> decreaseRequests,
-      List<ContainerMoveRequest> moveAsk) {
+      List<ContainerMoveRequest> moveAsk,
+      List<PerformanceMetric> performanceVector) {
     FiCaSchedulerApp application = getApplicationAttempt(applicationAttemptId);
     if (application == null) {
       LOG.error("Calling allocate on removed " +
           "or non existant application " + applicationAttemptId);
       return EMPTY_ALLOCATION;
+    }
+  
+    if(performanceVector != null && !performanceVector.isEmpty()) {
+      performanceMetrics.addAll(performanceVector);
+      Iterator<PerformanceMetric> it = performanceVector.iterator();
+      String perfmetr = "{" + it.next();
+      while (it.hasNext()) {
+        perfmetr += ", " + it.next();
+      }
+      perfmetr += "}";
+      LOG.info("Performance vector is: " + perfmetr);
     }
     
     // Sanity check

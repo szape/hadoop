@@ -59,6 +59,7 @@ import org.apache.hadoop.yarn.api.records.ExecutionType;
 import org.apache.hadoop.yarn.api.records.ExecutionTypeRequest;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NMToken;
+import org.apache.hadoop.yarn.api.records.PerformanceMetric;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceBlacklistRequest;
@@ -250,9 +251,15 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
     }
     return response;
   }
-
+  
   @Override
-  public AllocateResponse allocate(float progressIndicator) 
+  public AllocateResponse allocate(float progressIndicator)
+      throws YarnException, IOException {
+    return allocate(progressIndicator, null);
+  }
+  
+  public AllocateResponse allocate(float progressIndicator,
+      List<PerformanceMetric> performanceVector)
       throws YarnException, IOException {
     Preconditions.checkArgument(progressIndicator >= 0,
         "Progress indicator should not be negative");
@@ -289,8 +296,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
                 blacklistToRemove);
         
         allocateRequest =
-            AllocateRequest.newInstance(lastResponseId, progressIndicator,
-                askList, releaseList, blacklistRequest, updateList, moveAskList);
+            AllocateRequest.newInstance(lastResponseId, progressIndicator, askList, releaseList,
+                blacklistRequest, updateList, moveAskList, performanceVector);
         // clear blacklistAdditions and blacklistRemovals before
         // unsynchronized part
         blacklistAdditions.clear();
