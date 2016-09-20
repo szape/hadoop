@@ -27,16 +27,19 @@ import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.protocolrecords.AllocateRequest;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerMoveRequest;
+import org.apache.hadoop.yarn.api.records.PerformanceMetric;
 import org.apache.hadoop.yarn.api.records.ResourceBlacklistRequest;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
 import org.apache.hadoop.yarn.api.records.UpdateContainerRequest;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerIdPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerMoveRequestPBImpl;
+import org.apache.hadoop.yarn.api.records.impl.pb.PerformanceMetricPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ResourceBlacklistRequestPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ResourceRequestPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.UpdateContainerRequestPBImpl;
 import org.apache.hadoop.yarn.proto.YarnProtos.ContainerIdProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ContainerMoveRequestProto;
+import org.apache.hadoop.yarn.proto.YarnProtos.PerformanceMetricProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ResourceBlacklistRequestProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ResourceRequestProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.UpdateContainerRequestProto;
@@ -57,6 +60,7 @@ public class AllocateRequestPBImpl extends AllocateRequest {
   private List<UpdateContainerRequest> updateRequests = null;
   private ResourceBlacklistRequest blacklistRequest = null;
   private List<ContainerMoveRequest> moveAsk = null;
+  private List<PerformanceMetric> performanceVector = null;
   
   public AllocateRequestPBImpl() {
     builder = AllocateRequestProto.newBuilder();
@@ -109,6 +113,9 @@ public class AllocateRequestPBImpl extends AllocateRequest {
     }
     if (this.moveAsk != null) {
       addMoveAsksToProto();
+    }
+    if (this.performanceVector != null) {
+      addPerformanceVectorToProto();
     }
   }
 
@@ -427,6 +434,69 @@ public class AllocateRequestPBImpl extends AllocateRequest {
     };
     builder.addAllMoveAsk(iterable);
   }
+  
+  @Override
+  public List<PerformanceMetric> getPerformanceVector() {
+    initPerformanceVector();
+    return this.performanceVector;
+  }
+  
+  @Override
+  public void setPerformanceVector(List<PerformanceMetric> performanceVector) {
+    if(performanceVector == null) {
+      return;
+    }
+    initPerformanceVector();
+    this.performanceVector.clear();
+    this.performanceVector.addAll(performanceVector);
+  }
+  
+  private void initPerformanceVector() {
+    if (this.performanceVector != null) {
+      return;
+    }
+    AllocateRequestProtoOrBuilder p = viaProto ? proto : builder;
+    List<PerformanceMetricProto> list = p.getPerformanceVectorList();
+    this.performanceVector = new ArrayList<PerformanceMetric>();
+    
+    for (PerformanceMetricProto c : list) {
+      this.performanceVector.add(convertFromProtoFormat(c));
+    }
+  }
+  
+  private void addPerformanceVectorToProto() {
+    maybeInitBuilder();
+    builder.clearPerformanceVector();
+    if (performanceVector == null)
+      return;
+    Iterable<PerformanceMetricProto> iterable = new Iterable<PerformanceMetricProto>() {
+      @Override
+      public Iterator<PerformanceMetricProto> iterator() {
+        return new Iterator<PerformanceMetricProto>() {
+          
+          Iterator<PerformanceMetric> iter = performanceVector.iterator();
+          
+          @Override
+          public boolean hasNext() {
+            return iter.hasNext();
+          }
+          
+          @Override
+          public PerformanceMetricProto next() {
+            return convertToProtoFormat(iter.next());
+          }
+          
+          @Override
+          public void remove() {
+            throw new UnsupportedOperationException();
+            
+          }
+        };
+        
+      }
+    };
+    builder.addAllPerformanceVector(iterable);
+  }
 
   private ResourceRequestPBImpl convertFromProtoFormat(ResourceRequestProto p) {
     return new ResourceRequestPBImpl(p);
@@ -468,5 +538,13 @@ public class AllocateRequestPBImpl extends AllocateRequest {
   
   private ContainerMoveRequestProto convertToProtoFormat(ContainerMoveRequest t) {
     return ((ContainerMoveRequestPBImpl)t).getProto();
+  }
+  
+  private PerformanceMetricPBImpl convertFromProtoFormat(PerformanceMetricProto p) {
+    return new PerformanceMetricPBImpl(p);
+  }
+  
+  private PerformanceMetricProto convertToProtoFormat(PerformanceMetric t) {
+    return ((PerformanceMetricPBImpl)t).getProto();
   }
 }  

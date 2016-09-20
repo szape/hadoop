@@ -532,13 +532,13 @@ public class ApplicationMasterService extends AbstractService implements
         // Currently, container relocation logic is implemented only for FifoScheduler,
         // hence we check the type of the scheduler in use
         if (rScheduler instanceof FifoScheduler) {
-          // TODO normalize and validate moveAsk
+          // TODO normalize and validate moveAsk and performanceVector
           // Sending the container move requests with the allocate heartbeat
           allocation =
               ((FifoScheduler) this.rScheduler).allocate(appAttemptId, ask, release,
                   blacklistAdditions, blacklistRemovals,
                   increaseResourceReqs, decreaseResourceReqs,
-                  request.getMoveAskList());
+                  request.getMoveAskList(), request.getPerformanceVector());
         } else {
           allocation =
               this.rScheduler.allocate(appAttemptId, ask, release,

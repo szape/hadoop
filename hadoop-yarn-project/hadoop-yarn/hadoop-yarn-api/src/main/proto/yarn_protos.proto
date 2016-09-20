@@ -316,6 +316,11 @@ message ContainerMoveRequestProto {
   optional string target_host = 3;
 }
 
+message PerformanceMetricProto {
+  required string key = 1;
+  required double value = 2;
+}
+
 message ExecutionTypeRequestProto {
   optional ExecutionTypeProto execution_type = 1 [default = GUARANTEED];
   optional bool enforce_execution_type = 2 [default = false];
