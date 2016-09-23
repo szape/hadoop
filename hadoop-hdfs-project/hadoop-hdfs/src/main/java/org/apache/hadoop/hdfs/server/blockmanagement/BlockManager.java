@@ -85,6 +85,8 @@ import org.apache.hadoop.hdfs.server.namenode.CachedBlock;
 import org.apache.hadoop.hdfs.server.namenode.INode.BlocksMapUpdateInfo;
 import org.apache.hadoop.hdfs.server.namenode.NameNode;
 import org.apache.hadoop.hdfs.server.namenode.Namesystem;
+import org.apache.hadoop.hdfs.server.namenode.BlockStorageMovementNeeded;
+import org.apache.hadoop.hdfs.server.namenode.StoragePolicySatisfier;
 import org.apache.hadoop.hdfs.server.namenode.ha.HAContext;
 import org.apache.hadoop.hdfs.server.namenode.metrics.NameNodeMetrics;
 import org.apache.hadoop.hdfs.server.protocol.BlockCommand;
@@ -339,6 +341,11 @@ public class BlockManager implements BlockStatsMXBean {
 
   private final BlockIdManager blockIdManager;
 
+  /** For satisfying block storage policies */
+  private final StoragePolicySatisfier sps;
+  private final BlockStorageMovementNeeded storageMovementNeeded =
+      new BlockStorageMovementNeeded();
+
   public BlockManager(final Namesystem namesystem, boolean haEnabled,
       final Configuration conf) throws IOException {
     this.namesystem = namesystem;
@@ -366,6 +373,7 @@ public class BlockManager implements BlockStatsMXBean {
         DFSConfigKeys.DFS_NAMENODE_RECONSTRUCTION_PENDING_TIMEOUT_SEC_DEFAULT)
         * 1000L);
 
+    sps = new StoragePolicySatisfier(namesystem, storageMovementNeeded, this);
     blockTokenSecretManager = createBlockTokenSecretManager(conf);
 
     this.maxCorruptFilesReturned = conf.getInt(
@@ -562,9 +570,11 @@ public class BlockManager implements BlockStatsMXBean {
     this.blockReportThread.start();
     mxBeanName = MBeans.register("NameNode", "BlockStats", this);
     bmSafeMode.activate(blockTotal);
+    sps.start();
   }
 
   public void close() {
+    sps.stop();
     bmSafeMode.close();
     try {
       replicationThread.interrupt();
@@ -4617,5 +4627,15 @@ public class BlockManager implements BlockStatsMXBean {
       blockIndices[i++] = index;
     }
     return i;
+  }
+
+  /**
+   * Set file block collection for which storage movement needed for its blocks.
+   *
+   * @param id
+   *          - file block collection id.
+   */
+  public void satisfyStoragePolicy(long id) {
+    storageMovementNeeded.add(id);
   }
 }
