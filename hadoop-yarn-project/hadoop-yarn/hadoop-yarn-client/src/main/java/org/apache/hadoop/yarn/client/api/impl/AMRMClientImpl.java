@@ -637,6 +637,8 @@ public class AMRMClientImpl<T extends ContainerRequest> extends AMRMClient<T> {
   
   @Override
   public void addContainerMoveRequest(ContainerMoveRequest req) {
+    // TODO enable container move request for rack
+    LOG.info("### Successfully added move request to AMRMClient");
     ContainerId containerId = req.getOriginContainerId();
     moveAsk.put(containerId, req);
     pendingMoveAsk.put(containerId, req);

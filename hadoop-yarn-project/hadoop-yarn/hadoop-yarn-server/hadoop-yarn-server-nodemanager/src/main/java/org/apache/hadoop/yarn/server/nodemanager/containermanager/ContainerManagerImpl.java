@@ -983,6 +983,9 @@ public class ContainerManagerImpl extends CompositeService implements
     Configuration conf = null;
     YarnRPC rpc = null;
     if(request.getIsMove()) {
+      LOG.info("### Starting moved container internally: {container id: " + containerId +
+          ", origin container id:" + request.getOriginContainerId() +
+          ", origin node id: " + request.getOriginNodeId() + "}");
       // In case of a relocation request, the launch context is borrowed from the origin container
       conf = getConfig();
       rpc = YarnRPC.create(conf);
@@ -1068,10 +1071,14 @@ public class ContainerManagerImpl extends CompositeService implements
         // launch. A finished Application will not launch containers.
         metrics.launchedContainer();
         metrics.allocateContainer(containerTokenIdentifier.getResource());
-        LOG.debug("Started container " + containerId + " on node " + context.getNodeId() +
-            " with commands " +  launchContext.getCommands());
+
         // In case of a relocation request, shut down the origin container
         if(request.getIsMove()) {
+          LOG.info("### Started moved container " + containerId + " on node " +
+              context.getNodeId() + " with commands " +  launchContext.getCommands());
+          LOG.info("### Killing container with id " + request.getOriginContainerId());
+          
+          // TODO stop containers locally, if needed
           proxy.stopContainers(StopContainersRequest.newInstance(Collections.singletonList(request
               .getOriginContainerId())));
         }
@@ -1081,11 +1088,11 @@ public class ContainerManagerImpl extends CompositeService implements
             "in the process of shutting down");
       }
     } finally {
+      this.readLock.unlock();
       // stop the proxy to the origin NM
       if(proxy != null) {
         rpc.stopProxy(proxy, conf);
       }
-      this.readLock.unlock();
     }
   }
 
@@ -1172,7 +1179,9 @@ public class ContainerManagerImpl extends CompositeService implements
     // Getting the launch context of the origin container locally
     ContainerLaunchContext launchContext = context.getContainers().get(containerId)
         .getLaunchContext();
-    LOG.debug("Got launch context of container " + containerId + " on node " + context.getNodeId());
+    LOG.error("### Borrowing launch context for container " + containerId + " on node " + context
+        .getNodeId());
+    LOG.error("### containerLaunchContext on relocation: " + launchContext);
     return GetContainerLaunchContextResponse.newInstance(launchContext);
   }
 
@@ -1303,6 +1312,7 @@ public class ContainerManagerImpl extends CompositeService implements
     String containerIDStr = containerID.toString();
     Container container = this.context.getContainers().get(containerID);
     LOG.info("Stopping container with container Id: " + containerIDStr);
+    LOG.info("### Stopping container with id " + containerIDStr + " on node " + context.getNodeId());
 
     if (container == null) {
       if (!nodeStatusUpdater.isContainerRecentlyStopped(containerID)) {

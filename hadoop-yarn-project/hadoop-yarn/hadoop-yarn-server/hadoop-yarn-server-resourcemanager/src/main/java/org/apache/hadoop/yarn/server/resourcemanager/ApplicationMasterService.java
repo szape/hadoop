@@ -55,6 +55,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerMoveRequest;
 import org.apache.hadoop.yarn.api.records.ContainerUpdateType;
 import org.apache.hadoop.yarn.api.records.NMToken;
 import org.apache.hadoop.yarn.api.records.NodeId;
@@ -532,6 +533,15 @@ public class ApplicationMasterService extends AbstractService implements
         // Currently, container relocation logic is implemented only for FifoScheduler,
         // hence we check the type of the scheduler in use
         if (rScheduler instanceof FifoScheduler) {
+          if (!request.getMoveAskList().isEmpty()) {
+            String moves = "";
+            for (ContainerMoveRequest c : request.getMoveAskList()) {
+              moves += "(target host: " + c.getTargetHost() + ", origin container id: " + c
+                  .getOriginContainerId() + ")";
+            }
+            LOG.info("### Allocating move requests: " + moves);
+          }
+          
           // TODO normalize and validate moveAsk and performanceVector
           // Sending the container move requests with the allocate heartbeat
           allocation =

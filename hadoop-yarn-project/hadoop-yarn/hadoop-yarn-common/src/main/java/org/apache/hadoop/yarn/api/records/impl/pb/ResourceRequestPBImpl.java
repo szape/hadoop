@@ -245,14 +245,21 @@ public class ResourceRequestPBImpl extends  ResourceRequest {
   
   @Override
   public String toString() {
-    return "{AllocationRequestId: " + getAllocationRequestId()
-        + ", Priority: " + getPriority()
-        + ", Capability: " + getCapability()
-        + ", # Containers: " + getNumContainers()
-        + ", Location: " + getResourceName()
-        + ", Relax Locality: " + getRelaxLocality()
-        + ", Execution Type Request: " + getExecutionTypeRequest()
-        + ", Node Label Expression: " + getNodeLabelExpression() + "}";
+    StringBuilder sb = new StringBuilder();
+    sb.append("{AllocationRequestId: ").append(getAllocationRequestId());
+    sb.append(", Priority: ").append(getPriority());
+    sb.append(", Capability: ").append(getCapability());
+    sb.append(", # Containers: ").append(getNumContainers());
+    sb.append(", Location: ").append(getResourceName());
+    sb.append(", Relax Locality: ").append(getRelaxLocality());
+    sb.append(", Execution Type Request: ").append(getExecutionTypeRequest());
+    sb.append(", Node Label Expression: ").append(getNodeLabelExpression());
+    sb.append(", Is Move: ").append(getIsMove());
+    if (getIsMove()) {
+      sb.append(", Origin Container Id: ").append(getOriginContainerId());
+    }
+    sb.append("}");
+    return sb.toString();
   }
 
   @Override

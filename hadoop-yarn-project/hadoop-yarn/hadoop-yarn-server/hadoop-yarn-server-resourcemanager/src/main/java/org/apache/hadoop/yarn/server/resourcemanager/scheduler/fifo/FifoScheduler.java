@@ -400,6 +400,7 @@ public class FifoScheduler extends
       List<UpdateContainerRequest> decreaseRequests,
       List<ContainerMoveRequest> moveAsk,
       List<PerformanceMetric> performanceVector) {
+    LOG.info("### Starting allocation");
     FiCaSchedulerApp application = getApplicationAttempt(applicationAttemptId);
     if (application == null) {
       LOG.error("Calling allocate on removed " +
@@ -415,7 +416,7 @@ public class FifoScheduler extends
         perfmetr += ", " + it.next();
       }
       perfmetr += "}";
-      LOG.info("Performance vector is: " + perfmetr);
+      LOG.error("Performance vector is: " + perfmetr);
     }
     
     // Sanity check
@@ -438,6 +439,14 @@ public class FifoScheduler extends
       
       // In order to handle ask and moveAsk uniformly, convert all container move requests
       // into resource requests
+      String moves = "";
+      for(ContainerMoveRequest c : moveAsk)
+      {
+        moves += c.toString();
+      }
+      if (!moves.isEmpty()) {
+        LOG.info("### Scheduling move requests " + moves);
+      }
       application.convertAndAppendMoveAsk(moveAsk, ask);
       
       if (!ask.isEmpty()) {
@@ -710,6 +719,7 @@ public class FifoScheduler extends
     ResourceRequest request =
         application.getResourceRequest(schedulerKey, node.getNodeName());
     if (request != null) {
+      LOG.info("### Starting node local assignment: " + request.toString());
       // Don't allocate on this node if we don't need containers on this rack
       ResourceRequest rackRequest =
           application.getResourceRequest(schedulerKey,
@@ -726,6 +736,9 @@ public class FifoScheduler extends
       assignedContainers = 
         assignContainer(node, application, schedulerKey,
             assignableContainers, request, NodeType.NODE_LOCAL);
+      if(assignedContainers > 0) {
+        LOG.info("### Node local assignment: " + request.toString());
+      }
     }
     return assignedContainers;
   }
@@ -736,7 +749,8 @@ public class FifoScheduler extends
     ResourceRequest request =
         application.getResourceRequest(schedulerKey, node.getRMNode()
             .getRackName());
-    if (request != null) {
+    if (request != null && request.getRelaxLocality()) {
+      LOG.error("### Starting rack local assignment: " + request.toString());
       // Don't allocate on this rack if the application doens't need containers
       ResourceRequest offSwitchRequest =
           application.getResourceRequest(schedulerKey, ResourceRequest.ANY);
@@ -752,6 +766,9 @@ public class FifoScheduler extends
       assignedContainers = 
         assignContainer(node, application, schedulerKey,
             assignableContainers, request, NodeType.RACK_LOCAL);
+      if(assignedContainers > 0) {
+        LOG.error("### Rack local assignment: " + request.toString());
+      }
     }
     return assignedContainers;
   }
@@ -761,10 +778,14 @@ public class FifoScheduler extends
     int assignedContainers = 0;
     ResourceRequest request =
         application.getResourceRequest(schedulerKey, ResourceRequest.ANY);
-    if (request != null) {
+    if (request != null && request.getRelaxLocality()) {
+      LOG.error("### Starting off-switch assignment: " + request.toString());
       assignedContainers = 
         assignContainer(node, application, schedulerKey,
             request.getNumContainers(), request, NodeType.OFF_SWITCH);
+      if(assignedContainers > 0) {
+        LOG.error("### Off-switch assignment: " + request.toString());
+      }
     }
     return assignedContainers;
   }
@@ -803,6 +824,7 @@ public class FifoScheduler extends
         // handle resource requests that were generated from container move requests, so that the
         // allocated container is aware of the container relocation
         if(request.getIsMove()) {
+          LOG.error("### Assigning move request " + request + " to node " + nodeId);
           container.setIsMove(request.getIsMove());
           container.setOriginContainerId(request.getOriginContainerId());
           container.setOriginNodeId(

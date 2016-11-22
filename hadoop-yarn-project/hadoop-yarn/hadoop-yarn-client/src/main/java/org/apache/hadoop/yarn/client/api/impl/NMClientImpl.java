@@ -175,6 +175,9 @@ public class NMClientImpl extends NMClient {
   
   public Map<String, ByteBuffer> startContainer(Container container, ContainerLaunchContext containerLaunchContext)
       throws YarnException, IOException {
+    if(container.getIsMove()) {
+      LOG.info("### Start moving container: " + container);
+    }
     // Do synchronization on StartedContainer to prevent race condition
     // between startContainer and stopContainer only when startContainer is
     // in progress for a given container.
@@ -199,6 +202,8 @@ public class NMClientImpl extends NMClient {
           scRequest = StartContainerRequest.newInstance(container.getContainerToken(),
               container.getOriginContainerId(), originNodeId, token);
         } else {
+          LOG.error("### containerLaunchContext before sending StartContainerRequest: " +
+              containerLaunchContext);
           scRequest = StartContainerRequest.newInstance(containerLaunchContext,
               container.getContainerToken());
         }
@@ -224,6 +229,8 @@ public class NMClientImpl extends NMClient {
           // After the relocation, the origin container will be shut down,
           // so remove it from startedContainers
           startedContainers.remove(container.getOriginContainerId());
+          LOG.info("### Move response is {failed requests: " + response.getFailedRequests() + ", " +
+              "succeeded requests: "  + response.getSuccessfullyStartedContainers().size() + "}");
         }
       } catch (YarnException | IOException e) {
         startingContainer.state = ContainerState.COMPLETE;

@@ -270,46 +270,49 @@ public class TestRMContainerMove {
       assertEquals(0, amClient.moveAsk.size());
       assertEquals(0, amClient.pendingMoveAsk.size());
       
-      // relocating a container to another host
+      // Requesting a container relocation to an existing host.
       // In local mode, this host is the same as before,
-      // but it is not important here
-      ContainerId originContainerId = getContainerByCapability(capability1, allocatedContainers)
+      // but it does not matter here.
+      ContainerId originContainerId1 = getContainerByCapability(capability1, allocatedContainers)
           .getId();
-      NodeId targetNodeId = nodeReports.get(0).getNodeId();
-      ContainerMoveRequest moveRequest = ContainerMoveRequest.newInstance(priority1,
-          originContainerId, targetNodeId.getHost());
+      String targetHost1 = nodeReports.get(0).getNodeId().getHost();
+      ContainerMoveRequest moveRequest1 = ContainerMoveRequest.newInstance(priority1,
+          originContainerId1, targetHost1);
+      amClient.addContainerMoveRequest(moveRequest1);
+  
+      // Trying to relocate a container to a non-existent host.
+      // This should not work.
+      ContainerId originContainerId2 = getContainerByCapability(capability2, allocatedContainers)
+          .getId();
+      String targetHost2 = "non-existent-host";
+      ContainerMoveRequest moveRequest2 = ContainerMoveRequest.newInstance(priority2,
+          originContainerId2, targetHost2);
+      amClient.addContainerMoveRequest(moveRequest2);
       
-      amClient.addContainerMoveRequest(moveRequest);
       assertEquals(0, amClient.ask.size());
-      assertEquals(1, amClient.moveAsk.size());
-      assertEquals(1, amClient.pendingMoveAsk.size());
+      assertEquals(2, amClient.moveAsk.size());
+      assertEquals(2, amClient.pendingMoveAsk.size());
       
       amClient.allocate(0.1f);
       assertEquals(0, amClient.ask.size());
       assertEquals(0, amClient.moveAsk.size());
-      assertEquals(1, amClient.pendingMoveAsk.size());
+      assertEquals(2, amClient.pendingMoveAsk.size());
       
       allocatedContainers = getAllocatedContainers(amClient, DEFAULT_ITERATION);
       assertEquals(0, amClient.ask.size());
       assertEquals(0, amClient.moveAsk.size());
-      assertEquals(0, amClient.pendingMoveAsk.size());
-      
-      // select move responses
-      List<Container> moveResponses = new ArrayList<Container>();
-      for (Container c : allocatedContainers) {
-        if (c.getIsMove()) {
-          moveResponses.add(c);
-        }
-      }
+      assertEquals(1, amClient.pendingMoveAsk.size());
+      // still not allocated
+      assertEquals(moveRequest2, amClient.pendingMoveAsk.get(originContainerId2));
       
       // verify that relocation informations are set correctly in the move response
-      assertEquals(1, moveResponses.size());
-      Container moveResponse = moveResponses.get(0);
-      assertEquals(targetNodeId.getHost(), moveResponse.getNodeId().getHost());
-      assertEquals(originContainerId, moveResponse.getOriginContainerId());
+      assertEquals(1, allocatedContainers.size());
+      Container moveResponse = allocatedContainers.get(0);
+      assertEquals(targetHost1, moveResponse.getNodeId().getHost());
+      assertEquals(originContainerId1, moveResponse.getOriginContainerId());
       assertEquals(priority1, moveResponse.getPriority());
       assertEquals(capability1, moveResponse.getResource());
-      assertNotEquals(originContainerId, moveResponse.getId());
+      assertNotEquals(originContainerId1, moveResponse.getId());
       
       amClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,
           null, null);
