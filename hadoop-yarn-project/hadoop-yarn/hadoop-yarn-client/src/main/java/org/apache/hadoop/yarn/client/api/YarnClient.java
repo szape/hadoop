@@ -32,9 +32,10 @@ import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
+import org.apache.hadoop.yarn.api.protocolrecords.DownResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationsRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetNewReservationResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationDeleteRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationDeleteResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationListRequest;
@@ -43,6 +44,8 @@ import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.RightResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.UpResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationTimeoutsRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationTimeoutsResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -61,6 +64,7 @@ import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.hadoop.yarn.api.records.QueueUserACLInfo;
 import org.apache.hadoop.yarn.api.records.ReservationDefinition;
 import org.apache.hadoop.yarn.api.records.ReservationId;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.SignalContainerCommand;
 import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
@@ -852,6 +856,28 @@ public abstract class YarnClient extends AbstractService {
   public UpdateApplicationTimeoutsResponse updateApplicationTimeouts(
       UpdateApplicationTimeoutsRequest request)
       throws YarnException, IOException {
+    throw new UnsupportedOperationException("The sub-class extending "
+        + YarnClient.class.getName() + " is expected to implement this !");
+  }
+  
+  public UpResponse up(ContainerId containerId, Resource resource) throws YarnException,
+      IOException {
+    throw new UnsupportedOperationException("The sub-class extending "
+        + YarnClient.class.getName() + " is expected to implement this !");
+  }
+  
+  public DownResponse down(ContainerId containerId, Resource resource) throws YarnException, IOException {
+    throw new UnsupportedOperationException("The sub-class extending "
+        + YarnClient.class.getName() + " is expected to implement this !");
+  }
+  
+  public LeftResponse left(ContainerId containerId) throws YarnException, IOException {
+    throw new UnsupportedOperationException("The sub-class extending "
+        + YarnClient.class.getName() + " is expected to implement this !");
+  }
+  
+  public RightResponse right(ApplicationId applicationId, Resource resource) throws YarnException,
+      IOException {
     throw new UnsupportedOperationException("The sub-class extending "
         + YarnClient.class.getName() + " is expected to implement this !");
   }

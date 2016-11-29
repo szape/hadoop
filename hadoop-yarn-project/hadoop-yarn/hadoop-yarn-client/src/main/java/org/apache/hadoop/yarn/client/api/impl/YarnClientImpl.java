@@ -42,6 +42,8 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
+import org.apache.hadoop.yarn.api.protocolrecords.DownRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.DownResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.FailApplicationAttemptRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationAttemptReportRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationAttemptReportResponse;
@@ -72,6 +74,8 @@ import org.apache.hadoop.yarn.api.protocolrecords.GetQueueInfoRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetQueueUserAclsInfoRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.MoveApplicationAcrossQueuesRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationDeleteRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationDeleteResponse;
@@ -81,8 +85,12 @@ import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.RightRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.RightResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.SignalContainerRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.SubmitApplicationRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.UpRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.UpResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationPriorityRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationTimeoutsRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationTimeoutsResponse;
@@ -101,6 +109,7 @@ import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.hadoop.yarn.api.records.QueueUserACLInfo;
+import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.SignalContainerCommand;
 import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
@@ -919,11 +928,37 @@ public class YarnClientImpl extends YarnClient {
         SignalContainerRequest.newInstance(containerId, command);
     rmClient.signalToContainer(request);
   }
-
+  
   @Override
   public UpdateApplicationTimeoutsResponse updateApplicationTimeouts(
       UpdateApplicationTimeoutsRequest request)
       throws YarnException, IOException {
     return rmClient.updateApplicationTimeouts(request);
+  }
+  
+  @Override
+  public UpResponse up(ContainerId containerId, Resource resource)
+      throws YarnException, IOException {
+    return rmClient.up(UpRequest.newInstance(containerId, resource));
+  }
+  
+  @Override
+  public DownResponse down(ContainerId containerId, Resource resource)
+      throws YarnException, IOException {
+    return rmClient.down(DownRequest.newInstance(containerId, resource));
+  }
+  
+  @Override
+  public LeftResponse left(ContainerId containerId)
+      throws YarnException, IOException {
+    return rmClient.left(LeftRequest.newInstance(containerId));
+  }
+  
+  @Override
+  public RightResponse right(ApplicationId applicationId, Resource resource)
+      throws YarnException, IOException {
+    return rmClient.right(RightRequest.newInstance(
+        getApplicationReport(applicationId).getCurrentApplicationAttemptId(),
+        resource));
   }
 }

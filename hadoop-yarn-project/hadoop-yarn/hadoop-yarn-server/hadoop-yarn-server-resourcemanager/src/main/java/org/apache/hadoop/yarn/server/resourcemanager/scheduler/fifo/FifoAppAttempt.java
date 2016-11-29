@@ -42,7 +42,7 @@ import java.util.List;
 public class FifoAppAttempt extends FiCaSchedulerApp {
   private static final Log LOG = LogFactory.getLog(FifoAppAttempt.class);
 
-  FifoAppAttempt(ApplicationAttemptId appAttemptId, String user,
+  public FifoAppAttempt(ApplicationAttemptId appAttemptId, String user,
       Queue queue, ActiveUsersManager activeUsersManager,
       RMContext rmContext) {
     super(appAttemptId, user, queue, activeUsersManager, rmContext);

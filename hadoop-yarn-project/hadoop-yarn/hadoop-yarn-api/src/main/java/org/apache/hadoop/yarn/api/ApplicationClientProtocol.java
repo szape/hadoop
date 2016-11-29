@@ -24,6 +24,8 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Stable;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.io.retry.Idempotent;
+import org.apache.hadoop.yarn.api.protocolrecords.DownRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.DownResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.FailApplicationAttemptRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.FailApplicationAttemptResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationReportRequest;
@@ -47,6 +49,8 @@ import org.apache.hadoop.yarn.api.protocolrecords.GetQueueUserAclsInfoRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetQueueUserAclsInfoResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.MoveApplicationAcrossQueuesRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.MoveApplicationAcrossQueuesResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationDeleteRequest;
@@ -57,6 +61,10 @@ import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.RightRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.RightResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.UpRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.UpResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationPriorityRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationPriorityResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationTimeoutsRequest;
@@ -586,7 +594,35 @@ public interface ApplicationClientProtocol extends ApplicationBaseProtocol {
   @Public
   @Unstable
   @Idempotent
-  public UpdateApplicationTimeoutsResponse updateApplicationTimeouts(
+  UpdateApplicationTimeoutsResponse updateApplicationTimeouts(
       UpdateApplicationTimeoutsRequest request)
+      throws YarnException, IOException;
+  
+  @Public
+  @Unstable
+  @Idempotent
+  UpResponse up (
+      UpRequest request)
+      throws YarnException, IOException;
+  
+  @Public
+  @Unstable
+  @Idempotent
+  DownResponse down (
+      DownRequest request)
+      throws YarnException, IOException;
+  
+  @Public
+  @Unstable
+  @Idempotent
+  LeftResponse left (
+      LeftRequest request)
+      throws YarnException, IOException;
+  
+  @Public
+  @Unstable
+  @Idempotent
+  RightResponse right (
+      RightRequest request)
       throws YarnException, IOException;
 }

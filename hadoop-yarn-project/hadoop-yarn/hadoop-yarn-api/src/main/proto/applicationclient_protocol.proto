@@ -61,4 +61,8 @@ service ApplicationClientProtocolService {
   rpc updateApplicationPriority (UpdateApplicationPriorityRequestProto) returns (UpdateApplicationPriorityResponseProto);
   rpc signalToContainer(SignalContainerRequestProto) returns (SignalContainerResponseProto);
   rpc updateApplicationTimeouts (UpdateApplicationTimeoutsRequestProto) returns (UpdateApplicationTimeoutsResponseProto);
+  rpc up (UpRequestProto) returns (UpResponseProto);
+  rpc down (DownRequestProto) returns (DownResponseProto);
+  rpc left (LeftRequestProto) returns (LeftResponseProto);
+  rpc right (RightRequestProto) returns (RightResponseProto);
 }
