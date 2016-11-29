@@ -54,6 +54,8 @@ import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.ApplicationsRequestScope;
 import org.apache.hadoop.yarn.api.protocolrecords.CancelDelegationTokenRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.CancelDelegationTokenResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.DownRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.DownResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.FailApplicationAttemptRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.FailApplicationAttemptResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationAttemptReportRequest;
@@ -90,6 +92,8 @@ import org.apache.hadoop.yarn.api.protocolrecords.GetQueueUserAclsInfoRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetQueueUserAclsInfoResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.LeftResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.MoveApplicationAcrossQueuesRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.MoveApplicationAcrossQueuesResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.RenewDelegationTokenRequest;
@@ -102,10 +106,14 @@ import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.ReservationUpdateResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.RightRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.RightResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.SignalContainerRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.SignalContainerResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.SubmitApplicationRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.SubmitApplicationResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.UpRequest;
+import org.apache.hadoop.yarn.api.protocolrecords.UpResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationPriorityRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationPriorityResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.UpdateApplicationTimeoutsRequest;
@@ -163,6 +171,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeSignalContaine
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerAppReport;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNodeReport;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.YarnScheduler;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.piqos.AbstractPiqosScheduler;
 import org.apache.hadoop.yarn.server.resourcemanager.security.QueueACLsManager;
 import org.apache.hadoop.yarn.server.resourcemanager.security.RMDelegationTokenSecretManager;
 import org.apache.hadoop.yarn.server.resourcemanager.security.ReservationsACLsManager;
@@ -1759,7 +1768,45 @@ public class ClientRMService extends AbstractService implements
         AuditConstants.UPDATE_APP_TIMEOUTS, "ClientRMService", applicationId);
     return response;
   }
-
+  
+  @Override
+  public UpResponse up(UpRequest request) throws YarnException, IOException {
+    if (scheduler instanceof AbstractPiqosScheduler) {
+      return UpResponse.newInstance(
+          ((AbstractPiqosScheduler) scheduler).up(request.getContainerId(),
+              request.getCapability()));
+    }
+    return UpResponse.newInstance(false);
+  }
+  
+  @Override
+  public DownResponse down(DownRequest request) throws YarnException, IOException {
+    if (scheduler instanceof AbstractPiqosScheduler) {
+      return DownResponse.newInstance(
+          ((AbstractPiqosScheduler) scheduler).down(request.getContainerId(),
+              request.getCapability()));
+    }
+    return DownResponse.newInstance(false);
+  }
+  
+  @Override
+  public LeftResponse left(LeftRequest request) throws YarnException, IOException {
+    if (scheduler instanceof AbstractPiqosScheduler) {
+      return LeftResponse.newInstance(
+          ((AbstractPiqosScheduler) scheduler).left(request.getContainerId()));
+    }
+    return LeftResponse.newInstance(false);
+  }
+  
+  @Override
+  public RightResponse right(RightRequest request) throws YarnException, IOException {
+    if (scheduler instanceof AbstractPiqosScheduler) {
+      return RightResponse.newInstance(
+          ((AbstractPiqosScheduler) scheduler).right(request.getCapability()));
+    }
+    return RightResponse.newInstance(false);
+  }
+  
   private UserGroupInformation getCallerUgi(ApplicationId applicationId,
       String operation) throws YarnException {
     UserGroupInformation callerUGI;

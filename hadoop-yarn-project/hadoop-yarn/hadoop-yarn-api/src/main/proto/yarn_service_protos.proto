@@ -276,6 +276,40 @@ message UpdateApplicationTimeoutsResponseProto {
     repeated ApplicationUpdateTimeoutMapProto application_timeouts = 1;
 }
 
+message UpRequestProto {
+    required ContainerIdProto container_id = 1;
+    required ResourceProto capability = 2;
+}
+
+message UpResponseProto {
+    required bool success = 1;
+}
+
+message DownRequestProto {
+    required ContainerIdProto container_id = 1;
+    required ResourceProto capability = 2;
+}
+
+message DownResponseProto {
+    required bool success = 1;
+}
+
+message LeftRequestProto {
+    required ContainerIdProto container_id = 1;
+}
+
+message LeftResponseProto {
+    required bool success = 1;
+}
+
+message RightRequestProto {
+    required ResourceProto capability = 1;
+}
+
+message RightResponseProto {
+    required bool success = 1;
+}
+
 //////////////////////////////////////////////////////
 /////// client_NM_Protocol ///////////////////////////
 //////////////////////////////////////////////////////
