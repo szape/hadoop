@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.apache.hadoop</groupId>
+  <artifactId>hadoop-annotations</artifactId>
+  <version>3.0.0-alpha2-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20161201.092044</timestamp>
+      <buildNumber>1</buildNumber>
+    </snapshot>
+    <lastUpdated>20161201092044</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>3.0.0-alpha2-20161201.092044-1</value>
+        <updated>20161201092044</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>3.0.0-alpha2-20161201.092044-1</value>
+        <updated>20161201092044</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
