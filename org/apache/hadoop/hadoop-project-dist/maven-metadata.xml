@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
   <groupId>org.apache.hadoop</groupId>
-  <artifactId>hadoop-annotations</artifactId>
+  <artifactId>hadoop-project-dist</artifactId>
   <versioning>
     <versions>
       <version>3.0.0-alpha2-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20161201092044</lastUpdated>
+    <lastUpdated>20161201092047</lastUpdated>
   </versioning>
 </metadata>
