@@ -2,6 +2,7 @@ package org.apache.hadoop.yarn.api.protocolrecords;
 
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Records;
 
@@ -10,11 +11,20 @@ import org.apache.hadoop.yarn.util.Records;
 public abstract class RightRequest {
   @Public
   @Unstable
-  public static RightRequest newInstance(Resource capability) {
+  public static RightRequest newInstance(ApplicationAttemptId applicationAttemptId, Resource capability) {
     RightRequest request = Records.newRecord(RightRequest.class);
+    request.setApplicationAttemptId(applicationAttemptId);
     request.setCapability(capability);
     return request;
   }
+  
+  @Public
+  @Unstable
+  public abstract ApplicationAttemptId getApplicationAttemptId();
+  
+  @Public
+  @Unstable
+  public abstract void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId);
   
   @Public
   @Unstable

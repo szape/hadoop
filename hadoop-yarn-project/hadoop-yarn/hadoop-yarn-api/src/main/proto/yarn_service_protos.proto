@@ -277,8 +277,9 @@ message UpdateApplicationTimeoutsResponseProto {
 }
 
 message UpRequestProto {
-    required ContainerIdProto container_id = 1;
-    required ResourceProto capability = 2;
+    required ApplicationAttemptIdProto application_attempt_id = 1;
+    required ContainerIdProto container_id = 2;
+    required ResourceProto capability = 3;
 }
 
 message UpResponseProto {
@@ -286,8 +287,9 @@ message UpResponseProto {
 }
 
 message DownRequestProto {
-    required ContainerIdProto container_id = 1;
-    required ResourceProto capability = 2;
+    required ApplicationAttemptIdProto application_attempt_id = 1;
+    required ContainerIdProto container_id = 2;
+    required ResourceProto capability = 3;
 }
 
 message DownResponseProto {
@@ -295,7 +297,8 @@ message DownResponseProto {
 }
 
 message LeftRequestProto {
-    required ContainerIdProto container_id = 1;
+    required ApplicationAttemptIdProto application_attempt_id = 1;
+    required ContainerIdProto container_id = 2;
 }
 
 message LeftResponseProto {
@@ -303,7 +306,8 @@ message LeftResponseProto {
 }
 
 message RightRequestProto {
-    required ResourceProto capability = 1;
+    required ApplicationAttemptIdProto application_attempt_id = 1;
+    required ResourceProto capability = 2;
 }
 
 message RightResponseProto {

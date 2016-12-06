@@ -22,8 +22,12 @@ import com.google.protobuf.TextFormat;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.protocolrecords.RightRequest;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationAttemptIdPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ResourcePBImpl;
+import org.apache.hadoop.yarn.proto.YarnProtos;
+import org.apache.hadoop.yarn.proto.YarnProtos.ApplicationAttemptIdProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ResourceProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.RightRequestProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.RightRequestProtoOrBuilder;
@@ -35,6 +39,7 @@ public class RightRequestPBImpl extends RightRequest {
   RightRequestProto.Builder builder = null;
   boolean viaProto = false;
   
+  private ApplicationAttemptId applicationAttemptId = null;
   private Resource capability = null;
   
   public RightRequestPBImpl() {
@@ -75,6 +80,9 @@ public class RightRequestPBImpl extends RightRequest {
   }
   
   private void mergeLocalToBuilder() {
+    if (applicationAttemptId != null) {
+      builder.setApplicationAttemptId(convertToProtoFormat(this.applicationAttemptId));
+    }
     if (capability != null) {
       builder.setCapability(convertToProtoFormat(this.capability));
     }
@@ -97,6 +105,28 @@ public class RightRequestPBImpl extends RightRequest {
   }
   
   @Override
+  public ApplicationAttemptId getApplicationAttemptId() {
+    if (this.applicationAttemptId != null) {
+      return this.applicationAttemptId;
+    }
+    RightRequestProtoOrBuilder p = viaProto ? proto : builder;
+    if (!p.hasApplicationAttemptId()) {
+      return null;
+    }
+    this.applicationAttemptId = convertFromProtoFormat(p.getApplicationAttemptId());
+    return this.applicationAttemptId;
+  }
+  
+  @Override
+  public void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId) {
+    maybeInitBuilder();
+    if (applicationAttemptId == null) {
+      builder.clearApplicationAttemptId();
+    }
+    this.applicationAttemptId = applicationAttemptId;
+  }
+  
+  @Override
   public Resource getCapability() {
     if (this.capability != null) {
       return this.capability;
@@ -116,6 +146,14 @@ public class RightRequestPBImpl extends RightRequest {
       builder.clearCapability();
     }
     this.capability = capability;
+  }
+  
+  private ApplicationAttemptIdPBImpl convertFromProtoFormat(ApplicationAttemptIdProto p) {
+    return new ApplicationAttemptIdPBImpl(p);
+  }
+  
+  private ApplicationAttemptIdProto convertToProtoFormat(ApplicationAttemptId t) {
+    return ((ApplicationAttemptIdPBImpl) t).getProto();
   }
   
   private ResourcePBImpl convertFromProtoFormat(ResourceProto p) {

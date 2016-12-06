@@ -22,10 +22,14 @@ import com.google.protobuf.TextFormat;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.protocolrecords.DownRequest;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationAttemptIdPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerIdPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ResourcePBImpl;
+import org.apache.hadoop.yarn.proto.YarnProtos;
+import org.apache.hadoop.yarn.proto.YarnProtos.ApplicationAttemptIdProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ContainerIdProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ResourceProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.DownRequestProto;
@@ -38,6 +42,7 @@ public class DownRequestPBImpl extends DownRequest {
   DownRequestProto.Builder builder = null;
   boolean viaProto = false;
   
+  private ApplicationAttemptId applicationAttemptId = null;
   private ContainerId containerId = null;
   private Resource capability = null;
   
@@ -79,6 +84,9 @@ public class DownRequestPBImpl extends DownRequest {
   }
   
   private void mergeLocalToBuilder() {
+    if (applicationAttemptId != null) {
+      builder.setApplicationAttemptId(convertToProtoFormat(this.applicationAttemptId));
+    }
     if (containerId != null) {
       builder.setContainerId(convertToProtoFormat(this.containerId));
     }
@@ -101,6 +109,28 @@ public class DownRequestPBImpl extends DownRequest {
       builder = DownRequestProto.newBuilder(proto);
     }
     viaProto = false;
+  }
+  
+  @Override
+  public ApplicationAttemptId getApplicationAttemptId() {
+    if (this.applicationAttemptId != null) {
+      return this.applicationAttemptId;
+    }
+    DownRequestProtoOrBuilder p = viaProto ? proto : builder;
+    if (!p.hasApplicationAttemptId()) {
+      return null;
+    }
+    this.applicationAttemptId = convertFromProtoFormat(p.getApplicationAttemptId());
+    return this.applicationAttemptId;
+  }
+  
+  @Override
+  public void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId) {
+    maybeInitBuilder();
+    if (applicationAttemptId == null) {
+      builder.clearApplicationAttemptId();
+    }
+    this.applicationAttemptId = applicationAttemptId;
   }
   
   @Override
@@ -145,6 +175,14 @@ public class DownRequestPBImpl extends DownRequest {
       builder.clearCapability();
     }
     this.capability = capability;
+  }
+  
+  private ApplicationAttemptIdPBImpl convertFromProtoFormat(ApplicationAttemptIdProto p) {
+    return new ApplicationAttemptIdPBImpl(p);
+  }
+  
+  private ApplicationAttemptIdProto convertToProtoFormat(ApplicationAttemptId t) {
+    return ((ApplicationAttemptIdPBImpl) t).getProto();
   }
   
   private ContainerIdPBImpl convertFromProtoFormat(ContainerIdProto p) {

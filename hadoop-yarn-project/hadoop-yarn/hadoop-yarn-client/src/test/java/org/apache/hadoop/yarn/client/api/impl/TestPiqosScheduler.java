@@ -194,12 +194,13 @@ public class TestPiqosScheduler {
       amClient.start();
       amClient.registerApplicationMaster("Host", 10000, "");
   
+      ApplicationAttemptId applicationAttemptId = attemptId;
       ContainerId containerId = ContainerId.newContainerId(attemptId, 42L);
       Resource capability = Resource.newInstance(1024, 4);
-      yarnClient.up(UpRequest.newInstance(containerId, capability));
-      yarnClient.down(DownRequest.newInstance(containerId, capability));
-      yarnClient.left(LeftRequest.newInstance(containerId));
-      yarnClient.right(RightRequest.newInstance(capability));
+      yarnClient.up(UpRequest.newInstance(applicationAttemptId, containerId, capability));
+      yarnClient.down(DownRequest.newInstance(applicationAttemptId, containerId, capability));
+      yarnClient.left(LeftRequest.newInstance(applicationAttemptId, containerId));
+      yarnClient.right(RightRequest.newInstance(applicationAttemptId, capability));
       
       amClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,
           null, null);

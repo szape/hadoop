@@ -36,11 +36,13 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.AccessControlList;
+import org.apache.hadoop.yarn.api.protocolrecords.IncreaseContainersResourceRequest;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.ContainerUpdateType;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.QueueACL;
@@ -332,11 +334,66 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
           "or non existant application " + applicationAttemptId);
       return EMPTY_ALLOCATION;
     }
+    initiateAllocation(applicationAttemptId, ask, release, blacklistAdditions, blacklistRemovals,
+        increaseRequests, decreaseRequests);
+    
+//    // Sanity check
+//    normalizeRequests(ask);
+//
+//    // Release containers
+//    releaseContainers(release, application);
+//
+//    synchronized (application) {
+//
+//      // make sure we aren't stopping/removing the application
+//      // when the allocate comes in
+//      if (application.isStopped()) {
+//        LOG.info("Calling allocate on a stopped " +
+//            "application " + applicationAttemptId);
+//        return EMPTY_ALLOCATION;
+//      }
+//
+//      if (!ask.isEmpty()) {
+//        LOG.debug("allocate: pre-update" +
+//            " applicationId=" + applicationAttemptId +
+//            " application=" + application);
+//        application.showRequests();
+//
+//        // Update application requests
+//        application.updateResourceRequests(ask);
+//
+//        LOG.debug("allocate: post-update" +
+//            " applicationId=" + applicationAttemptId +
+//            " application=" + application);
+//        application.showRequests();
+//
+//        LOG.debug("allocate:" +
+//            " applicationId=" + applicationAttemptId +
+//            " #ask=" + ask.size());
+//      }
+//
+//      application.updateBlacklist(blacklistAdditions, blacklistRemovals);
+      
+      Resource headroom = application.getHeadroom();
+//      application.setApplicationHeadroomForMetrics(headroom);
+      return new Allocation(application.pullNewlyAllocatedContainers(),
+          headroom, null, null, null, application.pullUpdatedNMTokens());
+//    }
+  }
+  
+  private void initiateAllocation(ApplicationAttemptId applicationAttemptId,
+      List<ResourceRequest> ask, List<ContainerId> release,
+      List<String> blacklistAdditions, List<String> blacklistRemovals,
+      List<UpdateContainerRequest> increaseRequests,
+      List<UpdateContainerRequest> decreaseRequests) {
+    FifoAppAttempt application = getApplicationAttempt(applicationAttemptId);
+    if (application == null) {
+      LOG.error("Initiating allocation on removed " +
+          "or non existant application " + applicationAttemptId);
+    }
     
     // Sanity check
-    SchedulerUtils.normalizeRequests(ask, resourceCalculator,
-        getClusterResource(), minimumAllocation,
-        getMaximumResourceCapability());
+    normalizeRequests(ask);
     
     // Release containers
     releaseContainers(release, application);
@@ -346,9 +403,8 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
       // make sure we aren't stopping/removing the application
       // when the allocate comes in
       if (application.isStopped()) {
-        LOG.info("Calling allocate on a stopped " +
+        LOG.info("Initiating allocate on a stopped " +
             "application " + applicationAttemptId);
-        return EMPTY_ALLOCATION;
       }
       
       if (!ask.isEmpty()) {
@@ -374,8 +430,6 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
       
       Resource headroom = application.getHeadroom();
       application.setApplicationHeadroomForMetrics(headroom);
-      return new Allocation(application.pullNewlyAllocatedContainers(),
-          headroom, null, null, null, application.pullUpdatedNMTokens());
     }
   }
   
@@ -984,6 +1038,10 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
   public boolean up(ContainerId containerId, Resource capability) {
     System.out.println("### PiqosScheduler received an up request: (" + containerId + ", " +
         capability + ")");
+//    UpdateContainerRequest increaseRequest = UpdateContainerRequest.newInstance(
+//        container.getVersion(), containerId, ContainerUpdateType.INCREASE_RESOURCE,
+//        capability, null);
+//    List<UpdateContainerRequest> increaseRequests = Collections.singletonList(increaseRequest);
     return true;
   }
   

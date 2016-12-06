@@ -22,8 +22,12 @@ import com.google.protobuf.TextFormat;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.protocolrecords.LeftRequest;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationAttemptIdPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ContainerIdPBImpl;
+import org.apache.hadoop.yarn.proto.YarnProtos;
+import org.apache.hadoop.yarn.proto.YarnProtos.ApplicationAttemptIdProto;
 import org.apache.hadoop.yarn.proto.YarnProtos.ContainerIdProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.LeftRequestProto;
 import org.apache.hadoop.yarn.proto.YarnServiceProtos.LeftRequestProtoOrBuilder;
@@ -35,6 +39,7 @@ public class LeftRequestPBImpl extends LeftRequest {
   LeftRequestProto.Builder builder = null;
   boolean viaProto = false;
   
+  private ApplicationAttemptId applicationAttemptId = null;
   private ContainerId containerId = null;
   
   public LeftRequestPBImpl() {
@@ -75,6 +80,9 @@ public class LeftRequestPBImpl extends LeftRequest {
   }
   
   private void mergeLocalToBuilder() {
+    if (applicationAttemptId != null) {
+      builder.setApplicationAttemptId(convertToProtoFormat(this.applicationAttemptId));
+    }
     if (containerId != null) {
       builder.setContainerId(convertToProtoFormat(this.containerId));
     }
@@ -97,6 +105,28 @@ public class LeftRequestPBImpl extends LeftRequest {
   }
   
   @Override
+  public ApplicationAttemptId getApplicationAttemptId() {
+    if (this.applicationAttemptId != null) {
+      return this.applicationAttemptId;
+    }
+    LeftRequestProtoOrBuilder p = viaProto ? proto : builder;
+    if (!p.hasApplicationAttemptId()) {
+      return null;
+    }
+    this.applicationAttemptId = convertFromProtoFormat(p.getApplicationAttemptId());
+    return this.applicationAttemptId;
+  }
+  
+  @Override
+  public void setApplicationAttemptId(ApplicationAttemptId applicationAttemptId) {
+    maybeInitBuilder();
+    if (applicationAttemptId == null) {
+      builder.clearApplicationAttemptId();
+    }
+    this.applicationAttemptId = applicationAttemptId;
+  }
+  
+  @Override
   public ContainerId getContainerId() {
     if (this.containerId != null) {
       return this.containerId;
@@ -116,6 +146,14 @@ public class LeftRequestPBImpl extends LeftRequest {
       builder.clearContainerId();
     }
     this.containerId = containerId;
+  }
+  
+  private ApplicationAttemptIdPBImpl convertFromProtoFormat(ApplicationAttemptIdProto p) {
+    return new ApplicationAttemptIdPBImpl(p);
+  }
+  
+  private ApplicationAttemptIdProto convertToProtoFormat(ApplicationAttemptId t) {
+    return ((ApplicationAttemptIdPBImpl) t).getProto();
   }
   
   private ContainerIdPBImpl convertFromProtoFormat(ContainerIdProto p) {
