@@ -171,7 +171,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNodeSignalContaine
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerAppReport;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNodeReport;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.YarnScheduler;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.piqos.AbstractPiqosScheduler;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.piqos.PiqosAdjuster;
 import org.apache.hadoop.yarn.server.resourcemanager.security.QueueACLsManager;
 import org.apache.hadoop.yarn.server.resourcemanager.security.RMDelegationTokenSecretManager;
 import org.apache.hadoop.yarn.server.resourcemanager.security.ReservationsACLsManager;
@@ -1771,9 +1771,9 @@ public class ClientRMService extends AbstractService implements
   
   @Override
   public UpResponse up(UpRequest request) throws YarnException, IOException {
-    if (scheduler instanceof AbstractPiqosScheduler) {
+    if (scheduler instanceof PiqosAdjuster) {
       return UpResponse.newInstance(
-          ((AbstractPiqosScheduler) scheduler).up(request.getContainerId(),
+          ((PiqosAdjuster) scheduler).up(request.getContainerId(),
               request.getCapability()));
     }
     return UpResponse.newInstance(false);
@@ -1781,9 +1781,9 @@ public class ClientRMService extends AbstractService implements
   
   @Override
   public DownResponse down(DownRequest request) throws YarnException, IOException {
-    if (scheduler instanceof AbstractPiqosScheduler) {
+    if (scheduler instanceof PiqosAdjuster) {
       return DownResponse.newInstance(
-          ((AbstractPiqosScheduler) scheduler).down(request.getContainerId(),
+          ((PiqosAdjuster) scheduler).down(request.getContainerId(),
               request.getCapability()));
     }
     return DownResponse.newInstance(false);
@@ -1791,18 +1791,18 @@ public class ClientRMService extends AbstractService implements
   
   @Override
   public LeftResponse left(LeftRequest request) throws YarnException, IOException {
-    if (scheduler instanceof AbstractPiqosScheduler) {
+    if (scheduler instanceof PiqosAdjuster) {
       return LeftResponse.newInstance(
-          ((AbstractPiqosScheduler) scheduler).left(request.getContainerId()));
+          ((PiqosAdjuster) scheduler).left(request.getContainerId()));
     }
     return LeftResponse.newInstance(false);
   }
   
   @Override
   public RightResponse right(RightRequest request) throws YarnException, IOException {
-    if (scheduler instanceof AbstractPiqosScheduler) {
+    if (scheduler instanceof PiqosAdjuster) {
       return RightResponse.newInstance(
-          ((AbstractPiqosScheduler) scheduler).right(request.getApplicationAttemptId(), request
+          ((PiqosAdjuster) scheduler).right(request.getApplicationAttemptId(), request
               .getCapability()));
     }
     return RightResponse.newInstance(false);

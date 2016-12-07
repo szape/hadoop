@@ -18,16 +18,7 @@
 
 package org.apache.hadoop.yarn.server.resourcemanager.scheduler.piqos;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
-
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.LimitedPrivate;
@@ -41,6 +32,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.ContainerUpdateType;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.QueueACL;
@@ -51,6 +43,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
 import org.apache.hadoop.yarn.api.records.UpdateContainerRequest;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
@@ -67,6 +60,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainer;
 import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerEventType;
 import org.apache.hadoop.yarn.server.resourcemanager.rmcontainer.RMContainerState;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNode;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.AbstractYarnScheduler;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ActiveUsersManager;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.Allocation;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.NodeType;
@@ -78,15 +72,18 @@ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicat
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerApplicationAttempt;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerRequestKey;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerUtils;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.LeafQueue;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerNode;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppAddedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppAttemptAddedSchedulerEvent;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppAttemptRemovedSchedulerEvent;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event
+    .AppAttemptRemovedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppRemovedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.ContainerExpiredSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeAddedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeRemovedSchedulerEvent;
-import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeResourceUpdateSchedulerEvent;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event
+    .NodeResourceUpdateSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeUpdateSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.SchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fifo.FifoAppAttempt;
@@ -96,13 +93,21 @@ import org.apache.hadoop.yarn.util.resource.DefaultResourceCalculator;
 import org.apache.hadoop.yarn.util.resource.ResourceCalculator;
 import org.apache.hadoop.yarn.util.resource.Resources;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 @LimitedPrivate("yarn")
 @Evolving
 @SuppressWarnings("unchecked")
-public class PiqosScheduler extends AbstractPiqosScheduler implements
-    Configurable {
+public class PiqosScheduler extends AbstractYarnScheduler<FifoAppAttempt, FiCaSchedulerNode>
+    implements PiqosAdjuster, Configurable {
   
   private static final Log LOG = LogFactory.getLog(PiqosScheduler.class);
   
@@ -119,6 +124,7 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
   private QueueMetrics metrics;
   
   private final ResourceCalculator resourceCalculator = new DefaultResourceCalculator();
+  private long allocationRequestId = 0;
   
   private final Queue DEFAULT_QUEUE = new Queue() {
     @Override
@@ -278,6 +284,14 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
     this.conf = conf;
   }
   
+  private long getAllocationRequestId() {
+    return allocationRequestId++;
+  }
+  
+  private void resetAllocationRequestId() {
+    allocationRequestId = 0;
+  }
+  
   private void validateConf(Configuration conf) {
     // validate scheduler memory allocation setting
     int minMem = conf.getInt(
@@ -332,21 +346,111 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
           "or non existant application " + applicationAttemptId);
       return EMPTY_ALLOCATION;
     }
+    try {
+      initiateAllocation(applicationAttemptId, ask, release, blacklistAdditions, blacklistRemovals,
+          increaseRequests, decreaseRequests);
+    } catch(Exception e) {
+      LOG.error("Exception occured during allocation: " + e.getMessage());
+    }
+
+//    // Sanity check
+//    normalizeRequests(ask);
+//
+//    // Release containers
+//    releaseContainers(release, application);
+//
+//    synchronized (application) {
+//
+//      // make sure we aren't stopping/removing the application
+//      // when the allocate comes in
+//      if (application.isStopped()) {
+//        LOG.info("Calling allocate on a stopped " +
+//            "application " + applicationAttemptId);
+//        return EMPTY_ALLOCATION;
+//      }
+//
+//      if (!ask.isEmpty()) {
+//        LOG.debug("allocate: pre-update" +
+//            " applicationId=" + applicationAttemptId +
+//            " application=" + application);
+//        application.showRequests();
+//
+//        // Update application requests
+//        application.updateResourceRequests(ask);
+//
+//        LOG.debug("allocate: post-update" +
+//            " applicationId=" + applicationAttemptId +
+//            " application=" + application);
+//        application.showRequests();
+//
+//        LOG.debug("allocate:" +
+//            " applicationId=" + applicationAttemptId +
+//            " #ask=" + ask.size());
+//      }
+//
+//      application.updateBlacklist(blacklistAdditions, blacklistRemovals);
+    resetAllocationRequestId();
+    Resource headroom = application.getHeadroom();
+//      application.setApplicationHeadroomForMetrics(headroom);
+    return new Allocation(application.pullNewlyAllocatedContainers(),
+        headroom, null, null, null, application.pullUpdatedNMTokens(), application
+        .pullNewlyIncreasedContainers(), application.pullNewlyDecreasedContainers());
+//    }
+  }
+  
+  private void initiateAllocation(ApplicationAttemptId applicationAttemptId,
+      List<ResourceRequest> ask, List<ContainerId> release,
+      List<String> blacklistAdditions, List<String> blacklistRemovals,
+      List<UpdateContainerRequest> increaseRequests,
+      List<UpdateContainerRequest> decreaseRequests) throws YarnException {
+    FifoAppAttempt application = getApplicationAttempt(applicationAttemptId);
+    if (application == null) {
+      LOG.error("Initiating allocation on removed " +
+          "or non existant application " + applicationAttemptId);
+    }
     
     // Sanity check
     normalizeRequests(ask);
-    
+  
     // Release containers
+    if (release.size() > 1) {
+      throw new YarnException("Only one container can be released at a time");
+    } else if (release.size() == 1 && getRMContainer(release.get(0)) == null) {
+      throw new YarnException("Container " + release.get(0) + " is not found");
+    }
     releaseContainers(release, application);
+  
+    // update increase requests
+    // When application has some pending to-be-removed resource requests,
+    application.removedToBeRemovedIncreaseRequests();
+    if (null != increaseRequests && !increaseRequests.isEmpty()) {
+      // Pre-process increase requests
+      List<SchedContainerChangeRequest> schedIncreaseRequests =
+          createSchedContainerChangeRequests(increaseRequests, true);
+      try {
+      /*
+       * Acquire application's lock here to make sure application won't
+       * finish when updateIncreaseRequest is called.
+       */
+        application.getWriteLock().lock();
+        // make sure we aren't stopping/removing the application
+        // when the allocate comes in
+        // Process increase resource requests
+        if (!application.isStopped()) {
+          application.updateIncreaseRequests(schedIncreaseRequests);
+        }
+      } finally {
+        application.getWriteLock().unlock();
+      }
+    }
     
     synchronized (application) {
       
       // make sure we aren't stopping/removing the application
       // when the allocate comes in
       if (application.isStopped()) {
-        LOG.info("Calling allocate on a stopped " +
+        LOG.info("Initiating allocate on a stopped " +
             "application " + applicationAttemptId);
-        return EMPTY_ALLOCATION;
       }
       
       if (!ask.isEmpty()) {
@@ -372,8 +476,6 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
       
       Resource headroom = application.getHeadroom();
       application.setApplicationHeadroomForMetrics(headroom);
-      return new Allocation(application.pullNewlyAllocatedContainers(),
-          headroom, null, null, null, application.pullUpdatedNMTokens());
     }
   }
   
@@ -982,6 +1084,22 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
   public boolean up(ContainerId containerId, Resource capability) {
     System.out.println("### PiqosScheduler received an up request: (" + containerId + ", " +
         capability + ")");
+    RMContainer rmContainer = getRMContainer(containerId);
+    if (rmContainer == null) {
+      return false;
+    }
+    Container container = rmContainer.getContainer();
+    UpdateContainerRequest request = UpdateContainerRequest.newInstance(
+        container.getVersion(), containerId, ContainerUpdateType.INCREASE_RESOURCE,
+        capability, null);
+    try {
+      initiateAllocation(containerId.getApplicationAttemptId(), new
+              ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+          Collections.singletonList(request), new ArrayList<>());
+    } catch(YarnException e) {
+      LOG.error("Exception occured in adjuster method ´up´: " + e.getMessage());
+      return false;
+    }
     return true;
   }
   
@@ -989,12 +1107,36 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
   public boolean down(ContainerId containerId, Resource capability) {
     System.out.println("### PiqosScheduler received a down request: (" + containerId + ", " +
         capability + ")");
+    RMContainer rmContainer = getRMContainer(containerId);
+    if (rmContainer == null) {
+      return false;
+    }
+    Container container = rmContainer.getContainer();
+    UpdateContainerRequest request = UpdateContainerRequest.newInstance(
+        container.getVersion(), containerId, ContainerUpdateType.DECREASE_RESOURCE,
+        capability, null);
+    try {
+      initiateAllocation(containerId.getApplicationAttemptId(),
+          new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+          new ArrayList<>(), Collections.singletonList(request));
+    } catch(YarnException e) {
+      LOG.error("Exception occured in adjuster method ´down´: " + e.getMessage());
+      return false;
+    }
     return true;
   }
   
   @Override
   public boolean left(ContainerId containerId) {
     System.out.println("### PiqosScheduler received a left request: (" + containerId + ")");
+    try {
+      initiateAllocation(containerId.getApplicationAttemptId(), new ArrayList<>(),
+          Collections.singletonList(containerId), new ArrayList<>(), new ArrayList<>(),
+          new ArrayList<>(), new ArrayList<>());
+    } catch(YarnException e) {
+      LOG.error("Exception occured in adjuster method ´left´: " + e.getMessage());
+      return false;
+    }
     return true;
   }
   
@@ -1002,6 +1144,17 @@ public class PiqosScheduler extends AbstractPiqosScheduler implements
   public boolean right(ApplicationAttemptId applicationAttemptId, Resource capability) {
     System.out.println("### PiqosScheduler received a right request: (" +
         applicationAttemptId + ", " + capability + ")");
+    ResourceRequest request = ResourceRequest.newInstance(Priority.newInstance(1), "*",
+        capability, 1);
+    request.setAllocationRequestId(getAllocationRequestId());
+    try {
+      initiateAllocation(applicationAttemptId, Collections.singletonList(request),
+          new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+          new ArrayList<>());
+    } catch(YarnException e) {
+      LOG.error("Exception occured in adjuster method ´right´: " + e.getMessage());
+      return false;
+    }
     return true;
   }
 }

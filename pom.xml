@@ -41,10 +41,14 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       <url>${distMgmtStagingUrl}</url>
     </repository>
     <snapshotRepository>
+      <id>nexus-snapshots</id>
+      <url>http://info.ilab.sztaki.hu/nexus/repository/maven-snapshots/</url>
+    </snapshotRepository>
+    <!--snapshotRepository>
       <id>${distMgmtSnapshotsId}</id>
       <name>${distMgmtSnapshotsName}</name>
       <url>${distMgmtSnapshotsUrl}</url>
-    </snapshotRepository>
+    </snapshotRepository-->
     <site>
       <id>apache.website</id>
       <url>scpexe://people.apache.org/www/hadoop.apache.org/docs/r${project.version}</url>
@@ -112,6 +116,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     <dependency-check-maven.version>1.4.3</dependency-check-maven.version>
 
     <shell-executable>bash</shell-executable>
+
   </properties>
 
   <modules>
@@ -416,6 +421,25 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
         <version>${dependency-check-maven.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.5.1</version>
+        <executions>
+          <execution>
+            <id>default-deploy</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>deploy</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <serverId>nexus</serverId>
+          <nexusUrl>http://info.ilab.sztaki.hu/nexus/</nexusUrl>
+          <skipStaging>true</skipStaging>
+        </configuration>
       </plugin>
     </plugins>
   </build>

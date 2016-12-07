@@ -96,6 +96,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNode;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.Allocation;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.SchedulerNodeReport;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.YarnScheduler;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.piqos.PiqosAdjuster;
 import org.apache.hadoop.yarn.server.resourcemanager.security
     .AMRMTokenSecretManager;
 import org.apache.hadoop.yarn.server.resourcemanager.security.authorize.RMPolicyProvider;
@@ -527,12 +528,17 @@ public class ApplicationMasterService extends AbstractService implements
         LOG.warn(appAttemptId + " is in " + state +
                  " state, ignore container allocate request.");
         allocation = EMPTY_ALLOCATION;
-      } else {
+      } else if (rScheduler instanceof PiqosAdjuster) {
         allocation =
-            this.rScheduler.allocate(appAttemptId, ask, release,
-                blacklistAdditions, blacklistRemovals,
-                increaseResourceReqs, decreaseResourceReqs);
-      }
+            this.rScheduler.allocate(appAttemptId, new ArrayList<>(), new ArrayList<>(),
+                blacklistAdditions, blacklistRemovals, new ArrayList<>(), new ArrayList<>());
+      } else {
+          allocation =
+              this.rScheduler.allocate(appAttemptId, ask, release,
+                  blacklistAdditions, blacklistRemovals,
+                  increaseResourceReqs, decreaseResourceReqs);
+        }
+      
 
       if (!blacklistAdditions.isEmpty() || !blacklistRemovals.isEmpty()) {
         LOG.info("blacklist are updated in Scheduler." +

@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.service.Service;
+import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.DownRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.LeftRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.RightRequest;
@@ -33,14 +34,17 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
+import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
+import org.apache.hadoop.yarn.api.records.ContainerReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.NodeState;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.UpdatedContainer;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.ClientRMProxy;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
@@ -60,10 +64,13 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class TestPiqosScheduler {
   private static final Log LOG = LogFactory.getLog(TestPiqosScheduler.class);
@@ -194,19 +201,76 @@ public class TestPiqosScheduler {
       amClient.start();
       amClient.registerApplicationMaster("Host", 10000, "");
   
-      ContainerId containerId = ContainerId.newContainerId(attemptId, 42L);
+//      ContainerId containerId = ContainerId.newContainerId(attemptId, 42L);
       Resource capability = Resource.newInstance(1024, 4);
-      yarnClient.up(containerId, capability);
-      yarnClient.down(containerId, capability);
-      yarnClient.left(containerId);
+
       yarnClient.right(attemptId.getApplicationId(), capability);
-      
+      yarnClient.right(attemptId.getApplicationId(), capability);
+      List<Container> containers = getAllocatedContainers(amClient, 3);
+      ContainerId containerId1 = containers.get(0).getId();
+      ContainerId containerId2 = containers.get(1).getId();
+      System.out.println("## Containers after first allocation " + yarnClient
+          .getContainers(attemptId).size());
+      //      yarnClient.up(containerId, capability);
+//      yarnClient.down(containerId, capability);
+
+//      yarnClient.left(containerId);
+//      yarnClient.left(containerId2);
+//      List<Container> containers2 = getAllocatedContainers(amClient, 3);
+//
+//      System.out.println("## Containers after second allocation " + yarnClient
+//          .getContainers(attemptId).size());
+//
+//      yarnClient.left(containerId2);
+//      getAllocatedContainers(amClient, 3);
+//      System.out.println("## Containers after third allocation " + yarnClient
+//          .getContainers(attemptId).size());
+  
+      Resource capability1 = Resource.newInstance(2048, 4);
+      yarnClient.up(containerId1, capability1);
+      List<Container> containers2 = getAllocatedContainers(amClient, 5);
+      System.out.println("## Allocated containers " + containers2);
+      System.out.println("## Containers after second allocation:");
+      for (ContainerReport cr : yarnClient.getContainers(attemptId)) {
+        System.out.println("\t" + "id: " + cr.getContainerId() + ", capability:  "
+            + cr.getAllocatedResource());
+      }
+  
       amClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,
           null, null);
     } finally {
       if (amClient != null && amClient.getServiceState() == Service.STATE.STARTED) {
         amClient.stop();
       }
+    }
+  }
+  
+  private List<Container> getAllocatedContainers(
+      AMRMClientImpl<AMRMClient.ContainerRequest> amClient, int iterationsLeft)
+      throws YarnException, IOException {
+    List<Container> allocatedContainers = new ArrayList<Container>();
+    while (iterationsLeft-- > 0) {
+      AllocateResponse allocResponse = amClient.allocate(0.1f);
+      assertEquals(nodeCount, amClient.getClusterNodeCount());
+      allocatedContainers.addAll(allocResponse.getAllocatedContainers());
+      
+      for(UpdatedContainer uc : allocResponse.getUpdatedContainers()) {
+        allocatedContainers.add(uc.getContainer());
+      }
+      
+      if (allocatedContainers.isEmpty()) {
+        // sleep to let NM's heartbeat to RM and trigger allocations
+        sleep(100);
+      }
+    }
+    return allocatedContainers;
+  }
+  
+  private void sleep(int sleepTime) {
+    try {
+      Thread.sleep(sleepTime);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 }

@@ -937,28 +937,28 @@ public class YarnClientImpl extends YarnClient {
   }
   
   @Override
-  public UpResponse up(ContainerId containerId, Resource resource)
+  public boolean up(ContainerId containerId, Resource resource)
       throws YarnException, IOException {
-    return rmClient.up(UpRequest.newInstance(containerId, resource));
+    return rmClient.up(UpRequest.newInstance(containerId, resource)).getSuccess();
   }
   
   @Override
-  public DownResponse down(ContainerId containerId, Resource resource)
+  public boolean down(ContainerId containerId, Resource resource)
       throws YarnException, IOException {
-    return rmClient.down(DownRequest.newInstance(containerId, resource));
+    return rmClient.down(DownRequest.newInstance(containerId, resource)).getSuccess();
   }
   
   @Override
-  public LeftResponse left(ContainerId containerId)
+  public boolean left(ContainerId containerId)
       throws YarnException, IOException {
-    return rmClient.left(LeftRequest.newInstance(containerId));
+    return rmClient.left(LeftRequest.newInstance(containerId)).getSuccess();
   }
   
   @Override
-  public RightResponse right(ApplicationId applicationId, Resource resource)
+  public boolean right(ApplicationId applicationId, Resource resource)
       throws YarnException, IOException {
     return rmClient.right(RightRequest.newInstance(
         getApplicationReport(applicationId).getCurrentApplicationAttemptId(),
-        resource));
+        resource)).getSuccess();
   }
 }
