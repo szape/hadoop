@@ -91,6 +91,30 @@ public class ResourceUtilizationPBImpl extends ResourceUtilization {
   }
 
   @Override
+  public float getDisk() {
+    ResourceUtilizationProtoOrBuilder p = viaProto ? proto : builder;
+    return p.getDisk();
+  }
+
+  @Override
+  public void setDisk(float disk) {
+    maybeInitBuilder();
+    builder.setDisk(disk);
+  }
+
+  @Override
+  public float getNetwork() {
+    ResourceUtilizationProtoOrBuilder p = viaProto ? proto : builder;
+    return p.getNetwork();
+  }
+
+  @Override
+  public void setNetwork(float net) {
+    maybeInitBuilder();
+    builder.setNetwork(net);
+  }
+
+  @Override
   public int compareTo(ResourceUtilization other) {
     int diff = this.getPhysicalMemory() - other.getPhysicalMemory();
     if (diff == 0) {

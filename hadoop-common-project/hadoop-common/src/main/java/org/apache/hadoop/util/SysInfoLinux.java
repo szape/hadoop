@@ -100,6 +100,8 @@ public class SysInfoLinux extends SysInfo {
                "[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)" +
                "[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)" +
                "[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+).*");
+  private ResourceTimeTracker netReadTimeTracker;
+  private ResourceTimeTracker netWriteTimeTracker;
 
   /**
    * Pattern for parsing /proc/diskstats.
@@ -111,6 +113,9 @@ public class SysInfoLinux extends SysInfo {
               "[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)" +
               "[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)" +
               "[ \t]*([0-9]+)[ \t]*([0-9]+)[ \t]*([0-9]+)");
+  private ResourceTimeTracker diskReadTimeTracker;
+  private ResourceTimeTracker diskWriteTimeTracker;
+
   /**
    * Pattern for parsing /sys/block/partition_name/queue/hw_sector_size.
    */
@@ -207,6 +212,10 @@ public class SysInfoLinux extends SysInfo {
     this.jiffyLengthInMillis = jiffyLengthInMillis;
     this.cpuTimeTracker = new CpuTimeTracker(jiffyLengthInMillis);
     this.perDiskSectorSize = new HashMap<String, Integer>();
+    this.netReadTimeTracker = new ResourceTimeTracker();
+    this.netWriteTimeTracker = new ResourceTimeTracker();
+    this.diskReadTimeTracker = new ResourceTimeTracker();
+    this.diskWriteTimeTracker = new ResourceTimeTracker();
   }
 
   /**
@@ -437,6 +446,12 @@ public class SysInfoLinux extends SysInfo {
           }
           numNetBytesRead += Long.parseLong(mat.group(2));
           numNetBytesWritten += Long.parseLong(mat.group(10));
+
+          // Update values to calculate utilization
+          netReadTimeTracker.updateElapsedResource(
+              numNetBytesRead, getCurrentTime());
+          netWriteTimeTracker.updateElapsedResource(
+              numNetBytesWritten, getCurrentTime());
         }
         str = in.readLine();
       }
@@ -507,6 +522,12 @@ public class SysInfoLinux extends SysInfo {
           }
           numDisksBytesRead += Long.parseLong(sectorsRead) * sectorSize;
           numDisksBytesWritten += Long.parseLong(sectorsWritten) * sectorSize;
+
+          // Update values to calculate utilization
+          diskReadTimeTracker.updateElapsedResource(
+              numDisksBytesRead, getCurrentTime());
+          diskWriteTimeTracker.updateElapsedResource(
+              numDisksBytesWritten, getCurrentTime());
         }
         str = in.readLine();
       }
@@ -626,7 +647,7 @@ public class SysInfoLinux extends SysInfo {
   @Override
   public long getCumulativeCpuTime() {
     readProcStatFile();
-    return cpuTimeTracker.getCumulativeCpuTime();
+    return cpuTimeTracker.getCumulativeResource();
   }
 
   /** {@inheritDoc} */
@@ -665,16 +686,42 @@ public class SysInfoLinux extends SysInfo {
     return numNetBytesWritten;
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public float getNetworkBytesPerSecRead() {
+    return netReadTimeTracker.getResourceTrackerUsagePerSec();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public float getNetworkBytesPerSecWritten() {
+    return netWriteTimeTracker.getResourceTrackerUsagePerSec();
+  }
+
+  /** {@inheritDoc} */
   @Override
   public long getStorageBytesRead() {
     readProcDisksInfoFile();
     return numDisksBytesRead;
   }
 
+  /** {@inheritDoc} */
   @Override
   public long getStorageBytesWritten() {
     readProcDisksInfoFile();
     return numDisksBytesWritten;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public float getStorageBytesPerSecRead() {
+    return diskReadTimeTracker.getResourceTrackerUsagePerSec();
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public float getStorageBytesPerSecWritten() {
+    return diskWriteTimeTracker.getResourceTrackerUsagePerSec();
   }
 
   /**

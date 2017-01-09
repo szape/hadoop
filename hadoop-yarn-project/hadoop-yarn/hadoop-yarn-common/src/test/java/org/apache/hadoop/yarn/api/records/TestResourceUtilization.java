@@ -30,6 +30,8 @@ public class TestResourceUtilization {
     ResourceUtilization u3 = ResourceUtilization.newInstance(10, 20, 0.5f);
     ResourceUtilization u4 = ResourceUtilization.newInstance(20, 20, 0.5f);
     ResourceUtilization u5 = ResourceUtilization.newInstance(30, 40, 0.8f);
+    ResourceUtilization u6 = ResourceUtilization.newInstance(
+        10, 20, 0.5f, 1f, 2f);
 
     Assert.assertEquals(u1, u2);
     Assert.assertEquals(u1, u3);
@@ -48,7 +50,7 @@ public class TestResourceUtilization {
     Assert.assertTrue(u1.getCPU() == 0.5f);
 
     Assert.assertEquals("<pmem:10, vmem:" + u1.getVirtualMemory()
-        + ", vCores:0.5>", u1.toString());
+        + ", vCores:0.5, disk:0.0, net:0.0>", u1.toString());
 
     u1.addTo(10, 0, 0.0f);
     Assert.assertNotEquals(u1, u2);
@@ -59,5 +61,9 @@ public class TestResourceUtilization {
     Assert.assertEquals(u1, u4);
     u1.subtractFrom(10, 0, 0.0f);
     Assert.assertEquals(u1, u3);
+
+    u6.subtractFrom(5, 10, 0.1f);
+    Assert.assertEquals("<pmem:5, vmem:10, vCores:0.4, disk:1.0, net:2.0>",
+        u6.toString());
   }
 }

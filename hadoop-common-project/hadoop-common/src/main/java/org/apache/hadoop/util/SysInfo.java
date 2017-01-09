@@ -128,6 +128,18 @@ public abstract class SysInfo {
   public abstract long getNetworkBytesWritten();
 
   /**
+   * Obtain the aggregated number of bytes per second read over the network.
+   * @return total number of bytes per second read.
+   */
+  public abstract float getNetworkBytesPerSecRead();
+
+  /**
+   * Obtain the aggregated number of bytes per second written to the network.
+   * @return total number of bytes per second written.
+   */
+  public abstract float getNetworkBytesPerSecWritten();
+
+  /**
    * Obtain the aggregated number of bytes read from disks.
    *
    * @return total number of bytes read.
@@ -140,5 +152,19 @@ public abstract class SysInfo {
    * @return total number of bytes written.
    */
   public abstract long getStorageBytesWritten();
+
+  /**
+   * Obtain the aggregated number of bytes per second read from disks.
+   *
+   * @return total number of bytes per second read.
+   */
+  public abstract float getStorageBytesPerSecRead();
+
+  /**
+   * Obtain the aggregated number of bytes per second written to disks.
+   *
+   * @return total number of bytes per second written.
+   */
+  public abstract float getStorageBytesPerSecWritten();
 
 }

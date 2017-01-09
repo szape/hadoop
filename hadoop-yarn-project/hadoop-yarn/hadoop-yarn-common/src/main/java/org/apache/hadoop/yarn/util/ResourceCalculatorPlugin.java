@@ -155,6 +155,22 @@ public class ResourceCalculatorPlugin extends Configured {
   }
 
   /**
+   * Obtain the aggregated number of bytes read over the network.
+   * @return total number of bytes read.
+   */
+  public float getNetworkBytesPerSecRead() {
+    return sys.getNetworkBytesPerSecRead();
+  }
+
+  /**
+   * Obtain the aggregated number of bytes written to the network.
+   * @return total number of bytes written.
+   */
+  public float getNetworkBytesPerSecWritten() {
+    return sys.getNetworkBytesPerSecWritten();
+  }
+
+  /**
    * Obtain the aggregated number of bytes read from disks.
    *
    * @return total number of bytes read.
@@ -170,6 +186,24 @@ public class ResourceCalculatorPlugin extends Configured {
    */
   public long getStorageBytesWritten() {
     return sys.getStorageBytesWritten();
+  }
+
+  /**
+   * Obtain the aggregated number of bytes read from disks.
+   *
+   * @return total number of bytes read.
+   */
+  public float getStorageBytesPerSecRead() {
+    return sys.getStorageBytesPerSecRead();
+  }
+
+  /**
+   * Obtain the aggregated number of bytes written to disks.
+   *
+   * @return total number of bytes written.
+   */
+  public float getStorageBytesPerSecWritten() {
+    return sys.getStorageBytesPerSecWritten();
   }
 
   /**
