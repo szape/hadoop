@@ -143,11 +143,17 @@ public class NodeResourceMonitorImpl extends AbstractService implements
             resourceCalculatorPlugin.getVirtualMemorySize()
                 - resourceCalculatorPlugin.getAvailableVirtualMemorySize();
         float vcores = resourceCalculatorPlugin.getNumVCoresUsed();
+        float disk = resourceCalculatorPlugin.getStorageBytesRead() +
+            resourceCalculatorPlugin.getStorageBytesWritten();
+        float net = resourceCalculatorPlugin.getNetworkBytesRead() +
+            resourceCalculatorPlugin.getNetworkBytesWritten();
         nodeUtilization =
             ResourceUtilization.newInstance(
                 (int) (pmem >> 20), // B -> MB
                 (int) (vmem >> 20), // B -> MB
-                vcores); // Used Virtual Cores
+                vcores, // Used Virtual Cores
+                disk / (1024 * 1024), // B/s -> MB/s
+                net / (1024 * 1024)); // B/s -> MB/s
 
         try {
           Thread.sleep(monitoringInterval);

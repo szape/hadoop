@@ -28,28 +28,10 @@ import java.math.BigInteger;
  */
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
-public class CpuTimeTracker {
-  public static final int UNAVAILABLE = -1;
-  private final long minimumTimeInterval;
-
-  // CPU used time since system is on (ms)
-  private BigInteger cumulativeCpuTime = BigInteger.ZERO;
-
-  // CPU used time read last time (ms)
-  private BigInteger lastCumulativeCpuTime = BigInteger.ZERO;
-
-  // Unix timestamp while reading the CPU time (ms)
-  private long sampleTime;
-  private long lastSampleTime;
-  private float cpuUsage;
-  private BigInteger jiffyLengthInMillis;
+public class CpuTimeTracker extends ResourceTimeTracker {
 
   public CpuTimeTracker(long jiffyLengthInMillis) {
-    this.jiffyLengthInMillis = BigInteger.valueOf(jiffyLengthInMillis);
-    this.cpuUsage = UNAVAILABLE;
-    this.sampleTime = UNAVAILABLE;
-    this.lastSampleTime = UNAVAILABLE;
-    minimumTimeInterval =  10 * jiffyLengthInMillis;
+    super(jiffyLengthInMillis);
   }
 
   /**
@@ -63,22 +45,9 @@ public class CpuTimeTracker {
    * {@link CpuTimeTracker#minimumTimeInterval} apart
    */
   public float getCpuTrackerUsagePercent() {
-    if (lastSampleTime == UNAVAILABLE ||
-        lastSampleTime > sampleTime) {
-      // lastSampleTime > sampleTime may happen when the system time is changed
-      lastSampleTime = sampleTime;
-      lastCumulativeCpuTime = cumulativeCpuTime;
-      return cpuUsage;
-    }
-    // When lastSampleTime is sufficiently old, update cpuUsage.
-    // Also take a sample of the current time and cumulative CPU time for the
-    // use of the next calculation.
-    if (sampleTime > lastSampleTime + minimumTimeInterval) {
-      cpuUsage =
-          ((cumulativeCpuTime.subtract(lastCumulativeCpuTime)).floatValue())
-          * 100F / ((float) (sampleTime - lastSampleTime));
-      lastSampleTime = sampleTime;
-      lastCumulativeCpuTime = cumulativeCpuTime;
+    float cpuUsage = super.getResourceTrackerUsage();
+    if (cpuUsage != UNAVAILABLE) {
+      cpuUsage = cpuUsage * 100F;
     }
     return cpuUsage;
   }
@@ -88,7 +57,7 @@ public class CpuTimeTracker {
    * @return cumulative CPU time in milliseconds
    */
   public long getCumulativeCpuTime() {
-    return cumulativeCpuTime.longValue();
+    return super.getCumulativeResource();
   }
 
   /**
@@ -97,19 +66,18 @@ public class CpuTimeTracker {
    * @param newTime new sample time
    */
   public void updateElapsedJiffies(BigInteger elapsedJiffies, long newTime) {
-    cumulativeCpuTime = elapsedJiffies.multiply(jiffyLengthInMillis);
-    sampleTime = newTime;
+    super.updateElapsedResource(elapsedJiffies, newTime);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("SampleTime " + this.sampleTime);
-    sb.append(" CummulativeCpuTime " + this.cumulativeCpuTime);
-    sb.append(" LastSampleTime " + this.lastSampleTime);
-    sb.append(" LastCummulativeCpuTime " + this.lastCumulativeCpuTime);
-    sb.append(" CpuUsage " + this.cpuUsage);
-    sb.append(" JiffyLengthMillisec " + this.jiffyLengthInMillis);
+    sb.append("SampleTime " + sampleTime);
+    sb.append(" CummulativeCpuTime " + cumulativeResource);
+    sb.append(" LastSampleTime " + lastSampleTime);
+    sb.append(" LastCummulativeCpuTime " + lastCumulativeResource);
+    sb.append(" CpuUsage " + resourceUsage);
+    sb.append(" JiffyLengthMillisec " + convertionFactor);
     return sb.toString();
   }
 }

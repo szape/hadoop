@@ -45,9 +45,13 @@ public class SysInfoWindows extends SysInfo {
   private long cumulativeCpuTimeMs;
   private float cpuUsage;
   private long storageBytesRead;
+  private float storageBytesPerSecRead;
   private long storageBytesWritten;
+  private float storageBytesPerSecWritten;
   private long netBytesRead;
+  private float netBytesPerSecRead;
   private long netBytesWritten;
+  private float netBytesPerSecWritten;
 
   private long lastRefreshTime;
   static final int REFRESH_INTERVAL_MS = 1000;
@@ -72,9 +76,13 @@ public class SysInfoWindows extends SysInfo {
     cumulativeCpuTimeMs = -1;
     cpuUsage = -1;
     storageBytesRead = -1;
+    storageBytesPerSecRead = -1;
     storageBytesWritten = -1;
+    storageBytesPerSecWritten = -1;
     netBytesRead = -1;
+    netBytesPerSecRead = -1;
     netBytesWritten = -1;
+    netBytesPerSecWritten = -1;
   }
 
   String getSystemInfoInfoFromShell() {
@@ -96,6 +104,10 @@ public class SysInfoWindows extends SysInfo {
       long refreshInterval = now - lastRefreshTime;
       lastRefreshTime = now;
       long lastCumCpuTimeMs = cumulativeCpuTimeMs;
+      long lastStorageBytesRead = storageBytesRead;
+      long lastStorageBytesWritten = storageBytesWritten;
+      long lastNetBytesRead = netBytesRead;
+      long lastNetBytesWritten = netBytesWritten;
       reset();
       String sysInfoStr = getSystemInfoInfoFromShell();
       if (sysInfoStr != null) {
@@ -124,6 +136,23 @@ public class SysInfoWindows extends SysInfo {
                  */
                 cpuUsage = (cumulativeCpuTimeMs - lastCumCpuTimeMs)
                     * 100F / refreshInterval;
+              }
+              if (lastStorageBytesRead != -1) {
+                storageBytesPerSecRead = (float)((storageBytesRead -
+                    lastStorageBytesRead) * 1000F / refreshInterval);
+              }
+              if (lastStorageBytesWritten != -1) {
+                storageBytesPerSecWritten = (float)((storageBytesWritten -
+                    lastStorageBytesWritten) * 1000F / refreshInterval);
+              }
+              if (lastNetBytesRead != -1) {
+                netBytesPerSecRead = (float)((netBytesRead - lastNetBytesRead)
+                    * 1000F / refreshInterval);
+              }
+              if (lastNetBytesWritten != -1) {
+                netBytesPerSecWritten =
+                    (float)((netBytesWritten - lastNetBytesWritten)
+                    * 1000F / refreshInterval);
               }
             } catch (NumberFormatException nfe) {
               LOG.warn("Error parsing sysInfo", nfe);
@@ -230,16 +259,46 @@ public class SysInfoWindows extends SysInfo {
     return netBytesWritten;
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public float getNetworkBytesPerSecRead() {
+    refreshIfNeeded();
+    return netBytesPerSecRead;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public float getNetworkBytesPerSecWritten() {
+    refreshIfNeeded();
+    return netBytesPerSecWritten;
+  }
+
+  /** {@inheritDoc} */
   @Override
   public long getStorageBytesRead() {
     refreshIfNeeded();
     return storageBytesRead;
   }
 
+  /** {@inheritDoc} */
   @Override
   public long getStorageBytesWritten() {
     refreshIfNeeded();
     return storageBytesWritten;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public float getStorageBytesPerSecRead() {
+    refreshIfNeeded();
+    return storageBytesPerSecRead;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public float getStorageBytesPerSecWritten() {
+    refreshIfNeeded();
+    return storageBytesPerSecWritten;
   }
 
 }

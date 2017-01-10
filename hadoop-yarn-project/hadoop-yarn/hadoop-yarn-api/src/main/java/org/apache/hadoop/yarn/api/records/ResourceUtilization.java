@@ -46,10 +46,25 @@ public abstract class ResourceUtilization implements
 
   @Public
   @Unstable
+  public static ResourceUtilization newInstance(int pmem, int vmem, float cpu,
+      float disk, float net) {
+    ResourceUtilization utilization =
+        Records.newRecord(ResourceUtilization.class);
+    utilization.setPhysicalMemory(pmem);
+    utilization.setVirtualMemory(vmem);
+    utilization.setCPU(cpu);
+    utilization.setDisk(disk);
+    utilization.setNetwork(net);
+    return utilization;
+  }
+
+  @Public
+  @Unstable
   public static ResourceUtilization newInstance(
       ResourceUtilization resourceUtil) {
     return newInstance(resourceUtil.getPhysicalMemory(),
-        resourceUtil.getVirtualMemory(), resourceUtil.getCPU());
+        resourceUtil.getVirtualMemory(), resourceUtil.getCPU(),
+        resourceUtil.getDisk(), resourceUtil.getNetwork());
   }
 
   /**
@@ -106,6 +121,43 @@ public abstract class ResourceUtilization implements
   @Unstable
   public abstract void setCPU(float cpu);
 
+  /**
+   * Get <em>disk</em> utilization.
+   *
+   * @return <em>disk utilization</em> in MB/s
+   */
+  @Public
+  @Unstable
+  public abstract float getDisk();
+
+  /**
+   * Set <em>disk</em> utilization.
+   *
+   * @param disk <em>disk utilization</em> in MB/s
+   */
+  @Public
+  @Unstable
+  public abstract void setDisk(float disk);
+
+  /**
+   * Get <em>network</em> utilization.
+   *
+   * @return <em>network utilization</em> in MB/s
+   */
+  @Public
+  @Unstable
+  public abstract float getNetwork();
+
+  /**
+   * Set <em>network</em> utilization.
+   *
+   * @param net <em>network utilization</em> in MB/s
+   */
+  @Public
+  @Unstable
+  public abstract void setNetwork(float net);
+
+
   @Override
   public int hashCode() {
     final int prime = 263167;
@@ -113,6 +165,8 @@ public abstract class ResourceUtilization implements
     result = prime * result + getVirtualMemory();
     result = prime * result + getPhysicalMemory();
     result = 31 * result + Float.valueOf(getCPU()).hashCode();
+    result = 31 * result + Float.valueOf(getDisk()).hashCode();
+    result = 31 * result + Float.valueOf(getNetwork()).hashCode();
     return result;
   }
 
@@ -130,7 +184,9 @@ public abstract class ResourceUtilization implements
     ResourceUtilization other = (ResourceUtilization) obj;
     if (getVirtualMemory() != other.getVirtualMemory()
         || getPhysicalMemory() != other.getPhysicalMemory()
-        || getCPU() != other.getCPU()) {
+        || getCPU() != other.getCPU()
+        || getDisk() != other.getDisk()
+        || getNetwork() != other.getNetwork()) {
       return false;
     }
     return true;
@@ -139,7 +195,8 @@ public abstract class ResourceUtilization implements
   @Override
   public String toString() {
     return "<pmem:" + getPhysicalMemory() + ", vmem:" + getVirtualMemory()
-        + ", vCores:" + getCPU() + ">";
+        + ", vCores:" + getCPU() + ", disk:" + getDisk() + ", net:"
+        + getNetwork() + ">";
   }
 
   /**
