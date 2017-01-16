@@ -36,26 +36,22 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 
   <distributionManagement>
     <repository>
-      <id>${distMgmtStagingId}</id>
-      <name>${distMgmtStagingName}</name>
-      <url>${distMgmtStagingUrl}</url>
+      <id>nexus-releases</id>
+      <url>https://info.ilab.sztaki.hu/nexus/repository/maven-releases</url>
     </repository>
-    <snapshotRepository>
-      <id>${distMgmtSnapshotsId}</id>
-      <name>${distMgmtSnapshotsName}</name>
-      <url>${distMgmtSnapshotsUrl}</url>
-    </snapshotRepository>
-    <site>
-      <id>apache.website</id>
-      <url>scpexe://people.apache.org/www/hadoop.apache.org/docs/r${project.version}</url>
-    </site>
   </distributionManagement>
+
+  <scm>
+    <connection>scm:git:https://github.com/szape/hadoop.git</connection>
+      <url>http://github.com/szape/hadoop</url>
+    <developerConnection>scm:git:https://github.com/szape/project.git</developerConnection>
+  </scm>
 
   <repositories>
     <repository>
-      <id>apache.snapshots.https</id>
-      <name>Apache Development Snapshot Repository</name>
-      <url>https://repository.apache.org/content/repositories/snapshots</url>
+      <id>${distMgmtSnapshotsId}</id>
+      <name>${distMgmtSnapshotsName}</name>
+      <url>${distMgmtSnapshotsUrl}</url>
     </repository>
     <repository>
       <id>repository.jboss.org</id>
@@ -79,12 +75,12 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
   </organization>
 
   <properties>
-    <distMgmtSnapshotsId>nexus-snapshots</distMgmtSnapshotsId>
-    <distMgmtSnapshotsName>INFO Nexus Development Snapshot Repository</distMgmtSnapshotsName>
-    <distMgmtSnapshotsUrl>http://info.ilab.sztaki.hu/nexus/repository/maven-snapshots</distMgmtSnapshotsUrl>
-    <distMgmtStagingId>nexus-releases</distMgmtStagingId>
-    <distMgmtStagingName>INFO Nexus Release Distribution Repository</distMgmtStagingName>
-    <distMgmtStagingUrl>http://info.ilab.sztaki.hu/nexus/repository/maven-releases</distMgmtStagingUrl>
+    <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
+    <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
+    <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+    <distMgmtStagingId>apache.staging.https</distMgmtStagingId>
+    <distMgmtStagingName>Apache Release Distribution Repository</distMgmtStagingName>
+    <distMgmtStagingUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtStagingUrl>
 
     <!-- platform encoding override -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -293,6 +289,16 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
+<plugin>
+   <groupId>org.apache.maven.plugins</groupId>
+   <artifactId>maven-release-plugin</artifactId>
+   <version>2.4.2</version>
+   <configuration>
+      <tagNameFormat>v@{project.version}</tagNameFormat>
+      <autoVersionSubmodules>true</autoVersionSubmodules>
+      <releaseProfiles>releases</releaseProfiles>
+   </configuration>
+</plugin>
         <plugin>
           <groupId>com.atlassian.maven.plugins</groupId>
           <artifactId>maven-clover2-plugin</artifactId>
@@ -418,6 +424,25 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
         <artifactId>dependency-check-maven</artifactId>
         <version>${dependency-check-maven.version}</version>
       </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.5.1</version>
+        <executions>
+          <execution>
+            <id>default-deploy</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>deploy</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <serverId>nexus</serverId>
+          <nexusUrl>http://info.ilab.sztaki.hu/nexus/</nexusUrl>
+          <skipStaging>true</skipStaging>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
@@ -502,6 +527,32 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
   </reporting>
 
   <profiles>
+<profile>
+      <id>releases</id>
+      <build>
+         <plugins>
+            <plugin>
+               <groupId>org.sonatype.plugins</groupId>
+               <artifactId>nexus-staging-maven-plugin</artifactId>
+               <version>1.5.1</version>
+               <executions>
+                  <execution>
+                     <id>default-deploy</id>
+                     <phase>deploy</phase>
+                     <goals>
+                        <goal>deploy</goal>
+                     </goals>
+                  </execution>
+               </executions>
+               <configuration>
+                  <serverId>nexus-releases</serverId>
+                  <nexusUrl>https://info.ilab.sztaki.hu/nexus/</nexusUrl>
+                  <skipStaging>true</skipStaging>
+               </configuration>
+            </plugin>
+         </plugins>
+      </build>
+   </profile>
     <profile>
       <id>src</id>
       <activation>
