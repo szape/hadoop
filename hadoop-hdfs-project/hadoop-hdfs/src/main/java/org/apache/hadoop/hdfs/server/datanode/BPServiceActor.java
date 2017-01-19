@@ -247,6 +247,7 @@ class BPServiceActor implements Runnable {
       throws IncorrectVersionException {
     // build and layout versions should match
     String nnVersion = nsInfo.getSoftwareVersion();
+    /*
     String minimumNameNodeVersion = dnConf.getMinimumNameNodeVersion();
     if (VersionUtil.compareVersions(nnVersion, minimumNameNodeVersion) < 0) {
       IncorrectVersionException ive = new IncorrectVersionException(
@@ -260,6 +261,7 @@ class BPServiceActor implements Runnable {
           "DataNode version '" + dnVersion + "' but is within acceptable " +
           "limits. Note: This is normal during a rolling upgrade.");
     }
+    */
   }
 
   private void connectToNNAndHandshake() throws IOException {
