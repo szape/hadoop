@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.security.ContainerTokenIdentifier;
 import org.apache.hadoop.yarn.server.api.protocolrecords.LogAggregationReport;
@@ -81,6 +82,8 @@ public interface Context {
   Map<ApplicationId, String> getRegisteredCollectors();
 
   ConcurrentMap<ContainerId, Container> getContainers();
+  
+  ConcurrentMap<ContainerId, ContainerLaunchContext> getContainerLaunchContexts();
 
   ConcurrentMap<ContainerId, org.apache.hadoop.yarn.api.records.Container>
       getIncreasedContainers();

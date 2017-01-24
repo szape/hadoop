@@ -48,6 +48,7 @@ import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterRespo
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Priority;
@@ -625,6 +626,10 @@ public abstract class BaseAMRMProxyTest {
 
     @Override
     public ConcurrentMap<ContainerId, Container> getContainers() {
+      return null;
+    }
+  
+    public ConcurrentMap<ContainerId, ContainerLaunchContext> getContainerLaunchContexts() {
       return null;
     }
 

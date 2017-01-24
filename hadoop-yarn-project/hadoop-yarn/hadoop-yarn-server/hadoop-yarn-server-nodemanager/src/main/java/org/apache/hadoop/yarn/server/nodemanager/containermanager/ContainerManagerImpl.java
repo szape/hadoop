@@ -68,6 +68,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.SerializedException;
 import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationIdPBImpl;
+import org.apache.hadoop.yarn.api.records.impl.pb.ContainerLaunchContextPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.LogAggregationContextPBImpl;
 import org.apache.hadoop.yarn.api.records.impl.pb.ProtoUtils;
 import org.apache.hadoop.yarn.client.NMProxy;
@@ -407,6 +408,9 @@ public class ContainerManagerImpl extends CompositeService implements
     Container container = new ContainerImpl(getConfig(), dispatcher,
         launchContext, credentials, metrics, token, context, rcs);
     context.getContainers().put(token.getContainerID(), container);
+    context.getContainerLaunchContexts().put(token.getContainerID(),
+        new ContainerLaunchContextPBImpl(
+            ((ContainerLaunchContextPBImpl) container.getLaunchContext()).getProto()));
     dispatcher.getEventHandler().handle(new ApplicationContainerInitEvent(
         container));
   }
@@ -983,24 +987,38 @@ public class ContainerManagerImpl extends CompositeService implements
     Configuration conf = null;
     YarnRPC rpc = null;
     if(request.getIsMove()) {
-      LOG.info("### Starting moved container internally: {container id: " + containerId +
-          ", origin container id:" + request.getOriginContainerId() +
-          ", origin node id: " + request.getOriginNodeId() + "}");
+      ContainerId originContainerId = request.getOriginContainerId();
+      NodeId originNodeId = request.getOriginNodeId();
+      LOG.error("### Starting moved container internally: {container id: " + containerId +
+          ", origin container id:" + originContainerId +
+          ", origin node id: " + originNodeId + "}");
       // In case of a relocation request, the launch context is borrowed from the origin container
       conf = getConfig();
       rpc = YarnRPC.create(conf);
       // get the proxy to the origin NM
-      proxy = getCMClient(containerId, request.getOriginNodeId(), conf, rpc, request.getOriginNMToken());
+      proxy = getCMClient(containerId, originNodeId, conf, rpc, request.getOriginNMToken());
       // request the launch context from the origin NM
       launchContext =  proxy.getContainerLaunchContext(GetContainerLaunchContextRequest.newInstance(
-          request.getOriginContainerId())).getContainerLaunchContext();
+          originContainerId)).getContainerLaunchContext();
+  
+      String originHost = originNodeId.getHost();
+      String targetHost = containerTokenIdentifier.getNmHostAddress().split(":")[0];
+      List<String> replacementCommands = new ArrayList<String>();
+      for(String command : launchContext.getCommands()) {
+        replacementCommands.add(command.replaceAll(originHost, targetHost));
+      }
+      launchContext.setCommands(replacementCommands);
+      Map<String, String> environment = launchContext.getEnvironment();
+      for(String key : environment.keySet()) {
+        environment.put(key, environment.get(key).replaceAll(originHost, targetHost)
+            .replaceAll(originContainerId.toString(), containerId.toString()));
+      }
     } else {
       launchContext = request.getContainerLaunchContext();
     }
-
+    LOG.error("### ContainerLaunchContext is " + launchContext);
     Credentials credentials =
         YarnServerSecurityUtils.parseCredentials(launchContext);
-
     Container container =
         new ContainerImpl(getConfig(), this.dispatcher,
             launchContext, credentials, metrics, containerTokenIdentifier,
@@ -1013,6 +1031,9 @@ public class ContainerManagerImpl extends CompositeService implements
         applicationID, containerId);
       throw RPCUtil.getRemoteException("Container " + containerIdStr
           + " already is running on this node!!");
+    } else {
+      context.getContainerLaunchContexts().put(containerId, new ContainerLaunchContextPBImpl(
+              ((ContainerLaunchContextPBImpl) container.getLaunchContext()).getProto()));
     }
 
     this.readLock.lock();
@@ -1177,8 +1198,7 @@ public class ContainerManagerImpl extends CompositeService implements
       GetContainerLaunchContextRequest request) throws YarnException, IOException {
     ContainerId containerId = request.getContainerId();
     // Getting the launch context of the origin container locally
-    ContainerLaunchContext launchContext = context.getContainers().get(containerId)
-        .getLaunchContext();
+    ContainerLaunchContext launchContext = context.getContainerLaunchContexts().get(containerId);
     LOG.error("### Borrowing launch context for container " + containerId + " on node " + context
         .getNodeId());
     LOG.error("### containerLaunchContext on relocation: " + launchContext);

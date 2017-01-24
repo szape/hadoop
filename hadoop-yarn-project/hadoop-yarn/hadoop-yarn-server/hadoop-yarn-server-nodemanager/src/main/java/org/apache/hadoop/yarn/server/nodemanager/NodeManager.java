@@ -49,6 +49,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.YarnUncaughtExceptionHandler;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.event.AsyncDispatcher;
@@ -486,6 +487,9 @@ public class NodeManager extends CompositeService
 
     protected final ConcurrentMap<ContainerId, Container> containers =
         new ConcurrentSkipListMap<ContainerId, Container>();
+    
+    protected final ConcurrentMap<ContainerId, ContainerLaunchContext> launchContexts =
+        new ConcurrentSkipListMap<ContainerId, ContainerLaunchContext>();
 
     private Map<ApplicationId, String> registeredCollectors;
 
@@ -565,6 +569,11 @@ public class NodeManager extends CompositeService
     @Override
     public ConcurrentMap<ContainerId, Container> getContainers() {
       return this.containers;
+    }
+  
+    @Override
+    public ConcurrentMap<ContainerId, ContainerLaunchContext> getContainerLaunchContexts() {
+      return this.launchContexts;
     }
 
     @Override
